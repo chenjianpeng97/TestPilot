@@ -146,3 +146,14 @@ def test_table_must_match_files(tmp_path: Path) -> None:
     base = _tree(tmp_path, suite=suite)
     errors = validate_tree(base)
     assert any("case table must list User-Login-wrong-password" in item for item in errors)
+
+
+def test_stages_list_ok_and_rejects_unknown(tmp_path: Path) -> None:
+    ok = _CASE.replace("execution: 手工\n", "execution: 手工\nstages: [冒烟, 系统测试]\n")
+    base = _tree(tmp_path, ok)
+    assert validate_tree(base) == []
+
+    bad = _CASE.replace("execution: 手工\n", "execution: 手工\nstages: [回归]\n")
+    base_bad = _tree(tmp_path / "bad", bad)
+    errors = validate_tree(base_bad)
+    assert any("stages items must be one of" in item for item in errors)

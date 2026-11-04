@@ -22,6 +22,7 @@ TYPES = {"正向", "反向"}
 STATUSES = {"就绪", "废弃"}
 EXECUTIONS = {"手工", "自动"}
 IMPORTANCES = {"低", "中", "高"}
+STAGES = {"冒烟", "系统测试"}
 
 
 def validate_tree(root: Path) -> list[str]:
@@ -175,6 +176,22 @@ def _check_case(
         errors.append(f"{rel}: execution must be 手工 or 自动")
     if "importance" in meta and meta.get("importance") not in IMPORTANCES:
         errors.append(f"{rel}: importance must be 低, 中, or 高")
+    if "stages" in meta:
+        stages = meta.get("stages")
+        if not isinstance(stages, list) or not stages:
+            errors.append(f"{rel}: stages must be a non-empty list")
+        else:
+            seen_stages: set[str] = set()
+            for item in stages:
+                if not isinstance(item, str) or item not in STAGES:
+                    errors.append(
+                        f"{rel}: stages items must be one of {', '.join(sorted(STAGES))}"
+                    )
+                    break
+                if item in seen_stages:
+                    errors.append(f"{rel}: stages must not repeat {item}")
+                    break
+                seen_stages.add(item)
 
     if case_id:
         previous = seen.get(case_id)
