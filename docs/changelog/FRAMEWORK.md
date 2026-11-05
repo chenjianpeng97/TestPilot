@@ -46,7 +46,7 @@
 
 ## 2026-11-05 — tuner-testkit 7.0.2（平台主干改名为 main）
 
-- **commit**: TBD
+- **commit**: `6f17421`
 - **目的**: 本地、GitLab、GitHub 只保留一个主干，名字统一为 `main`（原 `public-main`）；文档里的分支名同步。
 - **路径**:
   - `.cursor/skills/dump-ddl/SKILL.md`（1.3.0 → 1.3.1）
