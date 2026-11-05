@@ -90,6 +90,47 @@ def test_sync_records_hashes_updates_untouched_and_keeps_edits(tmp_path: Path, m
     assert data["kit_version"]
 
 
+def _to_crlf(path: Path) -> None:
+    path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+
+
+def test_crlf_source_renders_lf(tmp_path: Path) -> None:
+    src = _fake_source(tmp_path / "src")
+    _to_crlf(src / ".cursor" / "rules" / "a.mdc")
+    _to_crlf(src / "AGENTS.md")
+    files = t.render_target(src, "cursor")
+    assert files[".cursor/rules/a.mdc"] == b"rule v1\n"
+    assert b"\r\n" not in files["AGENTS.md"]
+
+
+def test_crlf_checkout_is_not_a_local_edit(tmp_path: Path, monkeypatch) -> None:
+    src = _fake_source(tmp_path / "src")
+    dest = tmp_path / "ws"
+    dest.mkdir()
+    monkeypatch.setenv("TUNER_DNA_ROOT", str(src))
+    assert main(["sync", "--target", str(dest)]) == 0
+    rule = dest / ".cursor" / "rules" / "a.mdc"
+    _to_crlf(rule)  # what a Windows clone with core.autocrlf=true checks out
+    assert main(["check", "--target", str(dest)]) == 0
+
+    _fake_source(src, rule_text="rule v2\n")
+    drift = t.drift_file_map(dest, t.render_target(src, "cursor"), read_sync_record(dest)["targets"]["cursor"])
+    assert drift.outdated == [".cursor/rules/a.mdc"] and not drift.edited
+    assert main(["sync", "--target", str(dest)]) == 0
+    assert rule.read_bytes() == b"rule v2\n"
+
+
+def test_crlf_record_from_older_kit_counts_as_untouched(tmp_path: Path) -> None:
+    dest = tmp_path / "ws"
+    rule = dest / ".cursor" / "rules" / "a.mdc"
+    rule.parent.mkdir(parents=True)
+    rule.write_bytes(b"rule v1\n")
+    recorded = {".cursor/rules/a.mdc": t.sha256(b"rule v1\r\n")}
+    result = t.sync_file_map(dest, {".cursor/rules/a.mdc": b"rule v2\n"}, overwrite=False, recorded=recorded, log=lambda _m: None)
+    assert result.updated == [".cursor/rules/a.mdc"]
+    assert rule.read_bytes() == b"rule v2\n"
+
+
 def test_prune_keeps_locally_edited_removed_file(tmp_path: Path, monkeypatch) -> None:
     src = _fake_source(tmp_path / "src")
     dest = tmp_path / "ws"

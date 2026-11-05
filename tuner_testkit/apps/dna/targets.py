@@ -42,8 +42,19 @@ def strip_platform_only(text: str) -> str:
     return _PLATFORM_BLOCK_RE.sub("", text)
 
 
+def normalize_eol(data: bytes) -> bytes:
+    """Fold CRLF to LF in text; binary data (contains NUL) is returned as is.
+
+    Git with ``core.autocrlf=true`` checks DNA out as CRLF on Windows and LF
+    elsewhere, so hashes and comparisons must not depend on the checkout.
+    """
+    if b"\0" in data or b"\r\n" not in data:
+        return data
+    return data.replace(b"\r\n", b"\n")
+
+
 def _workspace_bytes(rel: str, path: Path) -> bytes:
-    data = path.read_bytes()
+    data = normalize_eol(path.read_bytes())
     if not rel.endswith(_TEXT_SUFFIXES):
         return data
     text = data.decode("utf-8")
@@ -181,6 +192,27 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def content_digest(data: bytes) -> str:
+    """Hash that is the same for a CRLF and an LF checkout of the same text."""
+    return sha256(normalize_eol(data))
+
+
+def _same_content(current: bytes, data: bytes) -> bool:
+    return current == data or normalize_eol(current) == normalize_eol(data)
+
+
+def _untouched(recorded: str | None, current: bytes) -> bool:
+    """True when ``current`` is what the previous sync wrote, in either line-ending form.
+
+    Records written by a kit whose payload kept CRLF hold the CRLF hash, so both
+    forms of the current file are tried.
+    """
+    if recorded is None:
+        return False
+    lf = normalize_eol(current)
+    return recorded in {sha256(current), sha256(lf), sha256(lf.replace(b"\n", b"\r\n"))}
+
+
 @dataclass
 class SyncResult:
     added: list[str] = field(default_factory=list)
@@ -224,14 +256,14 @@ def sync_file_map(
         if is_local_override(rel):
             continue
         dst = dest / rel
-        digest = sha256(data)
+        digest = content_digest(data)
         if dst.is_file():
             current = dst.read_bytes()
-            if current == data:
+            if _same_content(current, data):
                 result.unchanged += 1
                 result.written[rel] = digest
                 continue
-            untouched = recorded.get(rel) == sha256(current)
+            untouched = _untouched(recorded.get(rel), current)
             if not untouched and not overwrite:
                 result.kept_local.append(rel)
                 if rel in recorded:
@@ -254,7 +286,7 @@ def sync_file_map(
             dst = dest / rel
             if not dst.is_file():
                 continue
-            if sha256(dst.read_bytes()) == old_digest:
+            if _untouched(old_digest, dst.read_bytes()):
                 dst.unlink()
                 _remove_empty_parents(dst.parent, dest)
                 result.pruned.append(rel)
@@ -308,9 +340,9 @@ def drift_file_map(dest: Path, files: FileMap, recorded: dict[str, str] | None =
             drift.missing.append(rel)
             continue
         current = dst.read_bytes()
-        if current == data:
+        if _same_content(current, data):
             continue
-        if recorded.get(rel) == sha256(current):
+        if _untouched(recorded.get(rel), current):
             drift.outdated.append(rel)
         else:
             drift.edited.append(rel)
@@ -327,6 +359,6 @@ def diff_file_map(dest: Path, files: FileMap) -> tuple[list[str], list[str]]:
         dst = dest / rel
         if not dst.is_file():
             missing.append(rel)
-        elif dst.read_bytes() != data:
+        elif not _same_content(dst.read_bytes(), data):
             changed.append(rel)
     return missing, changed

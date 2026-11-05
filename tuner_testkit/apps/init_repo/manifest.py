@@ -5,13 +5,13 @@ The wheel carries runtime code. This manifest tracks Cursor/git DNA so
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import pathlib
 import re
 from dataclasses import dataclass
 
 from tuner_testkit.apps.dna.paths import DNA_PATHS, is_platform_only
+from tuner_testkit.apps.dna.targets import content_digest
 
 MANIFEST_PATH = pathlib.Path(__file__).resolve().parent / "release_manifest.json"
 
@@ -68,10 +68,11 @@ def _iter_files(root: pathlib.Path) -> list[pathlib.Path]:
 
 
 def compute_hashes(root: pathlib.Path | None = None) -> dict[str, str]:
+    """Hashes ignore CRLF vs LF, so a Windows and a Linux checkout agree."""
     base = root or repo_root()
     hashes: dict[str, str] = {}
     for path in _iter_files(base):
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        digest = content_digest(path.read_bytes())
         rel = str(path.relative_to(base)).replace("\\", "/")
         hashes[rel] = digest
     return hashes

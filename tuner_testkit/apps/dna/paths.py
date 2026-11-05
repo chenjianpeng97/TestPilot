@@ -16,7 +16,7 @@ DNA_PATHS: tuple[str, ...] = (
 )
 
 # Files and folders that only make sense in the platform repo. They stay in the
-# source tree (and in the release manifest) but are never bundled or synced.
+# source tree but are never hashed into the release manifest, bundled or synced.
 PLATFORM_ONLY_PATHS: tuple[str, ...] = (
     ".cursor/skills/release-template",
     "docs/changelog/FRAMEWORK.md",
