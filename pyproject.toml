@@ -103,10 +103,6 @@ include = ["tuner_testkit*"]
 build_py = "tuner_testkit.apps.dna.build.BuildPyWithDna"
 sdist = "tuner_testkit.apps.dna.build.SdistWithDna"
 
-[tool.uv.workspace]
-# dogfood/ is a workspace scaffolded by `tuner-init` from this repo (SUT = the platform itself).
-members = ["dogfood"]
-
 [tool.tuner-testkit]
 page_objects = "packages/page_objects"
 api_objects = "packages/api_objects"

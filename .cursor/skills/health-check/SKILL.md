@@ -21,7 +21,7 @@ description: Checks what this TestPilot workspace still lacks (SUT identity, env
 ## 在哪执行
 
 1. 目标目录要有 `INDEX.project.md` 和 `config/env.py`。没有就停，让用户先 `tuner-init scaffold <dir>`。
-2. 仓库根同时有 `tuner_testkit/project.py` 和 `dogfood/` 时这里是平台仓：先问目标目录（下游仓或 `dogfood/`），之后命令都加 `--directory <目标>` 或在目标目录执行。
+2. 仓库根有 `tuner_testkit/project.py` 时这里是平台仓：先问目标目录（下游仓），之后命令都加 `--directory <目标>` 或在目标目录执行。
 
 ## 1. 体检
 

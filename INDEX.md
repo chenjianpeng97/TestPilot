@@ -45,7 +45,7 @@ agent 任务 log：`docs/spec/agent-task-log.md` → `artifacts/inbox/`。
 
 | 路径 | domain | source | confidence | 一句话用途 |
 | --- | --- | --- | --- | --- |
-| `assets/testcases/README.md` | testcases | testcase-syntax | high | 功能用例集的模块总索引；业务模块写在下游仓或 dogfood |
+| `assets/testcases/README.md` | testcases | testcase-syntax | high | 功能用例集的模块总索引；业务模块写在下游仓 |
 | `assets/testsheet/` | testsheet | maintain-testsheet | high | 一轮测试单的目录约定；业务测试单写在下游仓 |
 | _(暂无平台内置业务知识)_ | | | | 业务仓写 `INDEX.project.md`。平台约定目录：`usecases/` `domain-notes/` `explore/` `design/` `testdesign/` `testcases/` `testsheet/` `testreport/` |
 
@@ -97,7 +97,7 @@ console_scripts：`tuner-config`、`tuner-recorder`、`tuner-dna`、`tuner-init`
 
 ## 3. 工具层（kit CLI + workspace `apps/`）
 
-公共工具在 **`tuner_testkit.apps`**（`tuner-*` scripts）。workspace 的 `apps/` 只放 **SUT 私有**工具（本仓示范见 `dogfood/apps/`）。规范：`docs/spec/apps-authoring-syntax.md`。
+公共工具在 **`tuner_testkit.apps`**（`tuner-*` scripts）。workspace 的 `apps/` 只放 **SUT 私有**工具（测试夹具见 `tuner_testkit/tests_fixtures/sample_workspace/`）。规范：`docs/spec/apps-authoring-syntax.md`。
 
 | 工具 | 运行 | 用途 | 交接文档 |
 | --- | --- | --- | --- |
@@ -121,7 +121,7 @@ console_scripts：`tuner-config`、`tuner-recorder`、`tuner-dna`、`tuner-init`
 
 | 类型 | 路径 | 说明 |
 | --- | --- | --- |
-| behave BDD | workspace `tests/features/**`（本仓示范 `dogfood/tests/features/`） | UI/API 双 stage；探索编排 `.cursor/agents/sut-self-learning.md`；下半程 `.cursor/agents/bdd-asset-pipeline.md` |
+| behave BDD | workspace `tests/features/**` | UI/API 双 stage；探索编排 `.cursor/agents/sut-self-learning.md`；下半程 `.cursor/agents/bdd-asset-pipeline.md` |
 | pytest | workspace `tests/pytest/**` | 性能/DB 核对等显式 pytest 套件（skill `maintain-pytest`） |
 | kit 回归 | `packages/tests/**`、`tuner_testkit/**/tests/**` | 平台运行库单测（`uv run pytest`） |
 
@@ -131,16 +131,10 @@ console_scripts：`tuner-config`、`tuner-recorder`、`tuner-dna`、`tuner-init`
 对外 skill 按 front-matter `group` 分三组：知识 / 动作 / 可用性，其余 `internal`。平台专属（不下发）：`release-template`、`docs/changelog/FRAMEWORK.md`，见 `tuner_testkit/apps/dna/paths.py`。
 工作台只读浏览：`uv run tuner-workbench` → `/ai`（与 REGISTRY 同一套扫描）。
 
-## 6. dogfood（`dogfood/`）
-
-用本仓 `tuner-init scaffold dogfood --no-ai` 生成的 workspace，被测系统是平台本身；uv workspace 成员，与平台共用 `.venv`。
+## 6. 路线图与 AI 组件
 
 | 内容 | 路径 |
 | --- | --- |
-| 业务资产地图 | [`dogfood/INDEX.project.md`](dogfood/INDEX.project.md) |
-| 平台路线图（A→B→C→D、TestPilot 7.0） | `dogfood/knowledge/wiki/domain-notes/platform/roadmap.md` |
-| 「QA 一天」验收剧本 / 轻量用户场景 | `dogfood/knowledge/wiki/usecases/platform/qa-daily-journeys.md`、`dogfood/knowledge/wiki/usecases/workbench/lightweight-user.md` |
-| 活文档（behave） | `dogfood/tests/features/platform/*.feature`、`dogfood/tests/features/workbench/*.feature`（未落地场景 `@wip`） |
-| fixture | `dogfood/apps/sample_tool/`、`dogfood/apps/sample_log_source/`（`log-source` 端口参考适配器，config `PORTS` 已绑定）、`dogfood/packages/action_words/db_seed/sample_seed.py` |
-
-运行：`uv run --directory dogfood behave --stage api --tags "@offline" --tags "~@wip"`。提交 scope 用 `dogfood`。
+| 平台路线图（A→B→C→D、TestPilot 7.0） | [`ROADMAP.md`](ROADMAP.md) |
+| AI 组件分组与说明（rules / skills / agents / hooks） | [`docs/spec/ai-components.md`](docs/spec/ai-components.md) |
+| 测试夹具 workspace（仅供平台单元测试） | `tuner_testkit/tests_fixtures/sample_workspace/` |

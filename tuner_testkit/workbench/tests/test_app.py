@@ -4,8 +4,7 @@ from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[3]
-DOGFOOD = REPO / "dogfood"
+DOGFOOD = Path(__file__).resolve().parents[2] / "tests_fixtures" / "sample_workspace"
 
 
 @pytest.fixture
@@ -23,6 +22,21 @@ def client(monkeypatch: pytest.MonkeyPatch):
     clear_directory_cache(DOGFOOD)
     monkeypatch.setenv("TUNER_ROOT", str(DOGFOOD))
     return TestClient(create_app(root=DOGFOOD))
+
+
+@pytest.fixture
+def platform_client(monkeypatch: pytest.MonkeyPatch):
+    """Workbench rooted at the platform repo itself (AI components page reads its DNA)."""
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    from tuner_testkit.tools.manifest import reset_registry_for_tests as reset_tools
+    from tuner_testkit.workbench.app import create_app
+
+    reset_tools()
+    repo = Path(__file__).resolve().parents[3]
+    monkeypatch.setenv("TUNER_ROOT", str(repo))
+    return TestClient(create_app(root=repo))
 
 
 def test_health_and_home(client) -> None:
@@ -82,8 +96,8 @@ def test_api_words_lists_db_seed(client) -> None:
     assert sample["has_dry_run"] is True
 
 
-def test_api_ai_lists_platform_dna(client) -> None:
-    body = client.get("/api/ai").json()
+def test_api_ai_lists_platform_dna(platform_client) -> None:
+    body = platform_client.get("/api/ai").json()
     assert body["total"] >= 4
     kinds = {row["kind"] for row in body["items"]}
     assert {"rule", "skill", "agent", "hook"} <= kinds
@@ -93,23 +107,23 @@ def test_api_ai_lists_platform_dna(client) -> None:
     skill = next(row for row in body["items"] if row["name"] == "create-action-word")
     assert skill["version"] != "-"
     assert skill["kind"] == "skill"
-    html = client.get("/ai").text
+    html = platform_client.get("/ai").text
     assert "AI 组件" in html
     assert "create-action-word" in html
     assert "1.1.4" in html or skill["version"] in html
 
 
-def test_ai_detail_shows_version_and_role(client) -> None:
-    resp = client.get("/ai/skill/create-action-word")
+def test_ai_detail_shows_version_and_role(platform_client) -> None:
+    resp = platform_client.get("/ai/skill/create-action-word")
     assert resp.status_code == 200
     text = resp.text
     assert "create-action-word" in text
     assert "v" in text
     assert ".cursor/skills/create-action-word/SKILL.md" in text
-    skills = client.get("/api/ai", params={"kind": "skill"}).json()
+    skills = platform_client.get("/api/ai", params={"kind": "skill"}).json()
     assert skills["items"]
     assert all(row["kind"] == "skill" for row in skills["items"])
-    assert client.get("/ai/skill/does-not-exist").status_code == 404
+    assert platform_client.get("/ai/skill/does-not-exist").status_code == 404
 
 
 def test_api_run_sample_tool(client) -> None:

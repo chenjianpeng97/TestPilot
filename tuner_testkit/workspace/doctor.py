@@ -328,7 +328,7 @@ def _check_dna(root: Path, report: _Report) -> None:
     from tuner_testkit.apps.dna.cli import installed_dna_version, read_sync_record
 
     if (root / "tuner_testkit" / "project.py").is_file() or (root.parent / "tuner_testkit" / "project.py").is_file():
-        report.add("dna.version", "info", "平台仓 / dogfood：DNA 即源码，跳过")
+        report.add("dna.version", "info", "平台仓：DNA 即源码，跳过")
         return
     installed = installed_dna_version(root)
     if installed is None:

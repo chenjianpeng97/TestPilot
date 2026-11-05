@@ -79,13 +79,13 @@ def test_hooks_read_staged_non_ascii_paths(tmp_path: Path) -> None:
 def test_validate_commit_msg_scope_coverage(tmp_path: Path) -> None:
     validate = _load("validate_commit_msg")
     msg = tmp_path / "msg.txt"
-    msg.write_text("feat(dogfood): add sample tool\n", encoding="utf-8")
-    os.environ["TUNER_COMMIT_STAGED"] = "dogfood/apps/sample_tool/cli.py"
+    msg.write_text("feat(apps): add sample tool\n", encoding="utf-8")
+    os.environ["TUNER_COMMIT_STAGED"] = "apps/sample_tool/cli.py"
     try:
         assert validate.main(["x", str(msg)]) == 0
-        os.environ["TUNER_COMMIT_STAGED"] = "dogfood/apps/sample_tool/cli.py\ntuner_testkit/tools/manifest.py"
+        os.environ["TUNER_COMMIT_STAGED"] = "apps/sample_tool/cli.py\ntuner_testkit/tools/manifest.py"
         assert validate.main(["x", str(msg)]) == 1  # packages layer not covered
-        msg.write_text("feat(dogfood,packages): add sample tool\n", encoding="utf-8")
+        msg.write_text("feat(apps,packages): add sample tool\n", encoding="utf-8")
         assert validate.main(["x", str(msg)]) == 0
         msg.write_text("added stuff\n", encoding="utf-8")
         assert validate.main(["x", str(msg)]) == 1

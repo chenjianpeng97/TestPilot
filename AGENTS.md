@@ -6,12 +6,12 @@
 >
 > - 业务资产地图：[`INDEX.project.md`](INDEX.project.md)（生成任何测试、资产、工具前先读）。
 > - AI 组件与版本：[`.cursor/REGISTRY.md`](.cursor/REGISTRY.md)（`tuner-index-ai` 确定性生成）。
+> - AI 组件分组与说明：[`docs/spec/ai-components.md`](docs/spec/ai-components.md)。
 > - 本仓补充约定：存在 `AGENTS.local.md` 时一并读，它优先于本文件的通用默认。`tuner-dna sync` 永不改它。
 > - 运行库与 CLI 来自 PyPI 包 `tuner-testkit`（导入名 `tuner_testkit`，命令 `tuner-*`）。
 
 <!-- platform-only:begin -->
 > **平台仓说明**：你正在平台仓里（`tuner_testkit/` 源码 + DNA 源）。平台能力地图是 [`INDEX.md`](INDEX.md)；
-> `dogfood/` 是同一 scaffold 生成的 workspace 示范，它的业务地图是 `dogfood/INDEX.project.md`。
 > 平台与下游仓的分工见文末「平台仓与下游仓」。
 <!-- platform-only:end -->
 
@@ -113,7 +113,6 @@ flowchart TD
 
 - **本仓不是 workspace**。下游 workspace 用 `tuner-init scaffold` 从空目录新建，`uv add tuner-testkit==x.y.z` 加 `tuner-dna sync --prune` 取平台能力。业务资产只活在下游仓。
 - **DNA 分平台与 workspace 两份视图**：`tuner_testkit/apps/dna/paths.py` 的 `PLATFORM_ONLY_PATHS`（如 `release-template`、`FRAMEWORK.md`）不下发；文本里 `<!-- platform-only:begin -->` 到 `end` 的块在下发时剔除。
-- `dogfood/` 是 scaffold 生成的 workspace 示范（被测系统是平台本身），存放路线图、验收剧本与活文档；它是 uv workspace 成员，不带自己的 `.cursor/`，提交 scope 用 `dogfood`。
 - 平台主干 `main`：框架改动只在这里提交，打 tag 发 PyPI。发版走 `release-template` skill，条目写 `docs/changelog/FRAMEWORK.md`，下游升级说明写 `docs/changelog/TEMPLATE-x.y.z.md`。
-- 「Plane」在本仓只指 dogfood 的被测系统。历史的 Plane Job 协议已在 5.0.0 退场，能力中立化为 `tuner_testkit.tools` 与 `tuner_testkit.catalog`；云端拉取 workspace 属于 D 阶段，见 `dogfood/knowledge/wiki/domain-notes/platform/roadmap.md`。
+- 历史的 Plane Job 协议已在 5.0.0 退场，能力中立化为 `tuner_testkit.tools` 与 `tuner_testkit.catalog`；云端拉取 workspace 属于 D 阶段，见 `ROADMAP.md`。
 <!-- platform-only:end -->

@@ -45,7 +45,7 @@ apps/<name>/
 
 ## 端口适配器模板（以 log-source 为例）
 
-参考实现：平台仓 `dogfood/apps/sample_log_source/`。
+取数逻辑由各团队自己实现，骨架如上。
 
 - `tool.py`：
 

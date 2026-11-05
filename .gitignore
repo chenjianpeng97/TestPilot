@@ -20,7 +20,7 @@ wheels/
 # report files (legacy path; new runs use artifacts/)
 report/
 
-# run-scope artifacts (sanitized, still local) — `**/` so dogfood/ and nested workspaces are covered
+# run-scope artifacts (sanitized, still local) — `**/` so nested workspaces are covered
 **/artifacts/evidence/
 **/artifacts/catalogs/
 **/artifacts/inbox/

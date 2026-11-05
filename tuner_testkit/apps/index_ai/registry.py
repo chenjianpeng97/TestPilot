@@ -299,7 +299,7 @@ KIND_META: tuple[tuple[str, str, str], ...] = (
 
 
 def resolve_cursor_root(root: pathlib.Path) -> pathlib.Path:
-    """Workspace with `.cursor/`, or parent (dogfood shares platform DNA)."""
+    """Workspace with `.cursor/`, or parent."""
     workspace = pathlib.Path(root).resolve()
     if (workspace / ".cursor").is_dir():
         return workspace

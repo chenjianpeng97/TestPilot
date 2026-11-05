@@ -6,8 +6,7 @@ import pytest
 
 from tuner_testkit.tools.runner import DestructiveNotConfirmed, RunRequest, run_tool
 
-REPO = Path(__file__).resolve().parents[3]
-DOGFOOD = REPO / "dogfood"
+DOGFOOD = Path(__file__).resolve().parents[2] / "tests_fixtures" / "sample_workspace"
 
 
 @pytest.fixture(autouse=True)

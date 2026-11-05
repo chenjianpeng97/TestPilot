@@ -91,8 +91,7 @@ def _stub_root() -> pathlib.Path | None:
     """Directory that contains thin SUT stub files (``config/env.py``, …).
 
     ``init_repo/stubs/`` is the single source of truth for both editable and
-    wheel installs: the platform repo itself is **not** a workspace (its
-    workspace example lives in ``dogfood/``), so scaffold never copies from
+    wheel installs: the platform repo itself is **not** a workspace (there is no in-repo workspace example), so scaffold never copies from
     the repo root. ``project_root()`` must not be used: scaffold is how a
     project is created.
     """

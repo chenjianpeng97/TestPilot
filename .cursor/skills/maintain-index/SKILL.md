@@ -14,7 +14,6 @@ group: internal
 - **写范围**：`INDEX.project.md` 围栏外的人工区。AI 组件不手写（`tuner-index-ai` 生成 `.cursor/REGISTRY.md`）。
 <!-- platform-only:begin -->
 - **平台仓**：另有根 `INDEX.md`（平台能力地图）。平台工具（`tuner_testkit/apps/`）、kit 模块、DNA 变化写那里；
-  `dogfood/` 的业务资产写 `dogfood/INDEX.project.md`。
 <!-- platform-only:end -->
 
 ## 先跑确定性渲染，再做人工区

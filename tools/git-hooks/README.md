@@ -13,7 +13,7 @@ git config core.hooksPath tools/git-hooks
 | 钩子 | 何时 | 做什么 | 阻断？ |
 | --- | --- | --- | --- |
 | `pre-commit` → `secret_scan.py` | `git commit` 前 | 扫描暂存文件里**像凭据的值**：Bearer/Basic 头、JWT、私钥块、Cookie 头、云 access key、`password = <8+ 字符非占位符>` 等赋值 | 是（exit 1） |
-| `commit-msg` → `validate_commit_msg.py` | 写完提交信息 | 首行 Conventional Commits；声明 scope 覆盖实际改动层（`packages` 覆盖三个子资产层；`dogfood/**` 用 `dogfood`） | 是 |
+| `commit-msg` → `validate_commit_msg.py` | 写完提交信息 | 首行 Conventional Commits；声明 scope 覆盖实际改动层（`packages` 覆盖三个子资产层） | 是 |
 | `pre-push` | `git push` 前 | `init_repo manifest --check`，DNA 漂移只警告 | 否 |
 
 - 合并/回滚提交（`Merge`/`Revert`/`fixup!`/`squash!` 开头）跳过 commit-msg 校验。

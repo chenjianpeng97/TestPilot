@@ -9,8 +9,7 @@ from tuner_testkit.action_words import registry as words_registry
 from tuner_testkit.catalog.directory import build_directory, clear_directory_cache, entry_mtimes
 from tuner_testkit.tools import manifest as tools_manifest
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DOGFOOD = REPO_ROOT / "dogfood"
+DOGFOOD = Path(__file__).resolve().parents[2] / "tests_fixtures" / "sample_workspace"
 
 
 def setup_function() -> None:

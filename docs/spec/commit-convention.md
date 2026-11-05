@@ -52,7 +52,6 @@
 | `hooks` | `.cursor/hooks*`、`tools/git-hooks/**` | 钩子 |
 | `init_repo` | `tuner_testkit/apps/init_repo/**` | 初始化工具与 release |
 | `index` | `INDEX.md`、`INDEX.project.md`、`.cursor/REGISTRY.md` | 索引/注册表 |
-| `dogfood` | `dogfood/**` | 平台仓内用 scaffold 生成的 dogfood workspace（知识、feature、fixture） |
 | `work` | `work/**` | 入库的任务（`work/tasks`）与任务上的 Decision |
 
 > `packages` 视为 `api_objects` / `page_objects` / `action_words` 的**上位 scope**：

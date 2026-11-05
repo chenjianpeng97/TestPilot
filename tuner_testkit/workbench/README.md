@@ -28,9 +28,9 @@ uv run tuner-workbench --no-browser --port 8765
 ## 运行示例
 
 ```bash
-uv run --directory dogfood tuner-workbench --no-browser
+uv run --directory <workspace> tuner-workbench --no-browser
 ```
 
-打开 `http://127.0.0.1:8765/tools` 应能看到 `sample_tool`；
+打开 `http://127.0.0.1:8765/tools` 应能看到该 workspace 的工具；
 `http://127.0.0.1:8765/words/db_seed` 应能看到 `db_seed.sample_seed`；
 `http://127.0.0.1:8765/ai` 应能看到 rule / skill / agent / hook（与 `.cursor/REGISTRY.md` 同源）。

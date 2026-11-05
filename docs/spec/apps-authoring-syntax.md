@@ -136,5 +136,5 @@ kit 只给差异大的能力定义**端口契约**（`docs/spec/ports.md`，确�
 5. `tuner-config validate` 检查绑定与契约（必填参数、只读、不在 kit 里）；`tuner-workspace doctor` 报 `ports.<端口>`；
    `INDEX.project.md` 的 `ports` 自动区列出实现。
 
-参考实现：平台仓 `dogfood/apps/sample_log_source/`（读本地文件，离线可跑）。
+取数逻辑由各团队自己实现（读本地文件、调日志 API 等），骨架如上。
 

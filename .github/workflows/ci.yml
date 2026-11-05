@@ -20,7 +20,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: Sync (all extras, workspace incl. dogfood)
+      - name: Sync (all extras)
         run: uv sync --extra all
       - name: "Ruff 0.17.3 (rules in pyproject [tool.ruff.lint]: E4 E7 E9 F B BLE)"
         run: uvx ruff@0.17.3 check .
@@ -38,26 +38,6 @@ jobs:
           git log -1 --format=%B > /tmp/msg.txt
           TUNER_COMMIT_STAGED="$(git diff-tree --no-commit-id --name-only -r HEAD)" \
             uv run python tools/git-hooks/validate_commit_msg.py /tmp/msg.txt
-
-  dogfood:
-    name: dogfood workspace · catalog · index · behave @offline
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-      - run: uv sync --extra all
-      - name: dogfood pytest (fixtures)
-        run: uv run --directory dogfood pytest -q
-      - name: workspace catalog + INDEX auto zones are current
-        run: |
-          uv run --directory dogfood tuner-workspace catalog --out -  > /dev/null
-          uv run --directory dogfood tuner-workspace index check
-      - name: behave @offline (QA-day journeys), dry-run of everything not @wip
-        run: |
-          uv run --directory dogfood behave --stage api --dry-run --tags "~@wip" --no-summary -f progress
-          uv run --directory dogfood behave --stage api --tags "@offline" --tags "~@wip" --no-summary -f progress
 
   scaffold-smoke:
     name: tuner-init scaffold → tuner-dna check → index_ai

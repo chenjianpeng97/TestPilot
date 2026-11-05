@@ -40,19 +40,18 @@ uv run tuner-workspace migrate knowledge --apply     # assets/{ddl,domain-notes,
 ```
 
 - `doctor` 的检查项与状态（`ok / info / warn / missing / error`）见 `tuner_testkit/workspace/doctor.py`；skill `health-check` 读它的 JSON。
-- `changelog` 的库清单与行格式见 `docs/spec/metadata-conventions.md` §4；平台仓里只检查带 `INDEX.project.md` 的子 workspace（`dogfood/`）。
+- `changelog` 的库清单与行格式见 `docs/spec/metadata-conventions.md` §4；平台仓里只检查带 `INDEX.project.md` 的子 workspace。
   紧急绕过一次：`TUNER_SKIP_CHANGELOG_CHECK=1`。
 - `migrate knowledge` 不碰 DNA（`.cursor/`、`docs/spec/`…，由 `tuner-dna sync` 刷新）与本机密钥文件；目标已存在且内容不同时报 conflict，不覆盖。
 
 ## 运行示例
 
 ```bash
-uv run --directory dogfood tuner-workspace catalog --out -
-uv run --directory dogfood tuner-workspace doctor
+uv run --directory <workspace> tuner-workspace catalog --out -
+uv run --directory <workspace> tuner-workspace doctor
 ```
 
-预期：catalog 一行 JSON，`catalog_version: 3`，`tools[]` 含 `sample_tool`、`sample_log_source`（`port: log-source`）与 kit 工具，
-`action_words[]` 含 `db_seed.sample_seed`；doctor 里 `ports.log-source` 为 `ok`（dogfood 绑定了参考适配器）。
+预期：catalog 一行 JSON，`catalog_version: 3`，`tools[]` 含 workspace 工具与 kit 工具；绑定了端口适配器时 doctor 里 `ports.<端口>` 为 `ok`。
 
 ## catalog 结构（v3）
 

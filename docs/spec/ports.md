@@ -48,7 +48,7 @@ description: 端口契约：kit 定义、workspace 用自定义 app 实现的能
 | `--out` | 否 | 同时把脱敏后的行写到文件 |
 
 envelope 的 `outputs[]` 每项：`{"ts": ISO, "level": "INFO", "service": "...", "line": "<脱敏原文>"}`。
-**只读**：不能标 `destructive`。参考实现：`dogfood/apps/sample_log_source/`（读本地文件）。
+**只读**：不能标 `destructive`。参考实现骨架见 skill `create-app` 的「端口适配器模板」；取数逻辑（读文件、调日志 API、Rancher）由各团队自己写。
 
 ## 4. 新增端口
 

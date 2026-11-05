@@ -31,8 +31,6 @@ ALLOWED_TYPES = {
 ALLOWED_SCOPES = {
     "knowledge", "assets", "apps", "packages", "api_objects", "page_objects", "action_words",
     "tests", "docs", "rules", "skills", "agents", "hooks", "init_repo", "index", "work",
-    # in-repo dogfood workspace (scaffolded from this platform repo)
-    "dogfood",
     # fine-grained package aliases also accepted
     "db", "logging", "recorder", "config", "api_test", "excel",
 }
@@ -67,8 +65,6 @@ def _staged_files() -> list[str]:
 def _path_to_layer(path: str) -> str | None:
     """Map a repo path to a canonical scope layer, or None if unrecognized."""
     p = path.replace("\\", "/")
-    if p.startswith("dogfood/"):
-        return "dogfood"
     if p.startswith("packages/api_objects/"):
         return "api_objects"
     if p.startswith("packages/page_objects/"):

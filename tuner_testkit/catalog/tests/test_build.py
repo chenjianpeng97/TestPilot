@@ -1,4 +1,4 @@
-"""Catalog build against a synthetic workspace and against dogfood/."""
+"""Catalog build against a synthetic workspace and against the sample fixture workspace."""
 from __future__ import annotations
 
 import json
@@ -8,8 +8,7 @@ from tuner_testkit.catalog.build import CATALOG_VERSION, build_catalog, write_ca
 from tuner_testkit.catalog.scan import scan_assets, scan_inbox, scan_run_manifests
 from tuner_testkit.tools import manifest as tools_manifest
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DOGFOOD = REPO_ROOT / "dogfood"
+DOGFOOD = Path(__file__).resolve().parents[2] / "tests_fixtures" / "sample_workspace"
 
 
 def setup_function() -> None:
@@ -109,8 +108,6 @@ def test_build_catalog_dogfood_sees_fixtures() -> None:
     assert "db_seed.sample_seed" in words
     assert words["db_seed.sample_seed"]["destructive"] is True
     assert "dry_run" in words["db_seed.sample_seed"]["params_schema"]["properties"]
-    assert payload["counts"]["features"] == 5
-    assert any(a["path"].endswith("roadmap.md") for a in payload["knowledge"]["assets"])
 
 
 def test_scan_helpers_tolerate_missing_dirs(tmp_path: Path) -> None:

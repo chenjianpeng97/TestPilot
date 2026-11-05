@@ -1,6 +1,6 @@
 ---
 description: Keep INDEX.project.md current and require managed libraries to leave a changelog trail; the index is the discovery entry for humans and the LLM
-globs: knowledge/**,assets/**,packages/api_objects/**,packages/page_objects/**,packages/action_words/**,apps/**,tuner_testkit/apps/**,dogfood/knowledge/**,dogfood/assets/**,dogfood/packages/**,dogfood/apps/**,dogfood/INDEX.project.md
+globs: knowledge/**,assets/**,packages/api_objects/**,packages/page_objects/**,packages/action_words/**,apps/**,tuner_testkit/apps/**
 alwaysApply: false
 version: 2.0.0
 ---
@@ -12,7 +12,6 @@ version: 2.0.0
 
 <!-- platform-only:begin -->
 平台仓另有根 `INDEX.md`（平台能力地图：kit 模块、`tuner-*` 工具、DNA）。平台工具 / 公共包登记在 `INDEX.md`；
-`dogfood/` 是 scaffold 生成的 workspace，它的业务地图是 `dogfood/INDEX.project.md`。
 <!-- platform-only:end -->
 
 ## 留痕（changelog trail）
