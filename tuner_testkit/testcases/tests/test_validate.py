@@ -149,11 +149,11 @@ def test_table_must_match_files(tmp_path: Path) -> None:
 
 
 def test_stages_list_ok_and_rejects_unknown(tmp_path: Path) -> None:
-    ok = _CASE.replace("execution: 手工\n", "execution: 手工\nstages: [冒烟, 系统测试]\n")
+    ok = _CASE.replace("execution: 手工\n", "execution: 手工\nstages: [单元, 冒烟, 系统测试, 回归]\n")
     base = _tree(tmp_path, ok)
     assert validate_tree(base) == []
 
-    bad = _CASE.replace("execution: 手工\n", "execution: 手工\nstages: [回归]\n")
+    bad = _CASE.replace("execution: 手工\n", "execution: 手工\nstages: [验收]\n")
     base_bad = _tree(tmp_path / "bad", bad)
     errors = validate_tree(base_bad)
     assert any("stages items must be one of" in item for item in errors)

@@ -20,7 +20,7 @@ knowledge/
 ├── wiki/
 │   ├── index.md                        # wiki 目录：每页一行（路径 + 一句话摘要），先读这里
 │   ├── log.md                          # wiki 维护流水（ingest / lint），见 metadata-conventions §4
-│   ├── domain-notes/<domain>/<name>.md # 业务讲解、字段含义、角色权限、环境约束；被测系统说明 <sut>/profile.md
+│   ├── domain-notes/<domain>/<name>.md # 业务讲解、字段含义、角色权限、环境约束
 │   ├── usecases/<domain>/<name>.md     # 业务场景与流程（从需求或用例导出整理）
 │   ├── explore/<app>/<name>.md         # 探索得到的能力清单 / 站点地图（evidence 指回 artifacts/evidence）
 │   └── design/<app>/<route-slug>.md    # API 与数据库效果（见 design-knowledge-syntax）

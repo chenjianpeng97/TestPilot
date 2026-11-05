@@ -1,6 +1,6 @@
 ---
 name: testcase-syntax
-version: 1.5.0
+version: 1.6.0
 description: assets/testcases 的模块、套件目录、单用例文件，以及和 TestLink 对齐的步骤字段。功能用例集的唯一事实源。
 ---
 
@@ -71,7 +71,7 @@ id_prefix: User-Login
 type: 正向
 status: 就绪
 execution: 手工
-stages: [冒烟]
+stages: [系统测试]
 source: knowledge/requirements/REQ-user-login.md
 requirements: [REQ-user-login]
 data: [account:qa-admin]
@@ -119,7 +119,7 @@ confidence: medium
 
 `type` 只取 `正向` 或 `反向`。`status` 只取 `就绪` 或 `废弃`。`execution` 只取 `手工` 或 `自动`，没写自动化的用例用 `手工`。`importance` 可选，只取 `低`、`中`、`高`；不知道就不写。
 
-`stages` 可选，表示这条用例应在哪些测试阶段执行。取值是非空列表，元素只取 `冒烟` 或 `系统测试`，不重复。一条用例可同时属于多个阶段，例如 `stages: [冒烟, 系统测试]`。不知道或不标注就省略该字段。`type` 仍只表示正向/反向，不要把阶段写进 `type`。
+`stages` 表示这条用例应在哪些测试阶段执行。取值是非空列表，元素只取 `单元`、`冒烟`、`系统测试`、`回归`，不重复。一条用例可同时属于多个阶段，例如 `stages: [冒烟, 系统测试]`。**默认是 `[系统测试]`**：`maintain-testcases` 新建用例时必须写出该字段；旧文件省略时同样按 `系统测试` 处理。`type` 仍只表示正向/反向，不要把阶段写进 `type`。
 
 `requirements` 可选但推荐：这条用例覆盖的需求 ID 列表（`REQ-<slug>`），文件在 `knowledge/requirements/<REQ-ID>.md`。
 需求库存在时 `python -m tuner_testkit.testcases` 校验每个 ID 都有文件；`tuner-workspace doctor` 报告需求覆盖率。
@@ -162,7 +162,7 @@ ID 是全库唯一键：`<id_prefix>-<slug>`。
 | Execution Type（Manual / Automated） | `execution`：`手工` / `自动` |
 | Importance（Low / Medium / High） | `importance`：`低` / `中` / `高`。不知道省略 |
 | Status = Obsolete | `status: 废弃`。在用为 `就绪` |
-| （无直接对应；本仓扩展） | `stages`：应执行的测试阶段列表，`冒烟` / `系统测试` |
+| （无直接对应；本仓扩展） | `stages`：应执行的测试阶段列表，`单元` / `冒烟` / `系统测试` / `回归`，默认 `系统测试` |
 | 自定义说明 | `## 备注`；账号和夹具写在 `## 测试数据` |
 
 不另造 TestLink 外部编号。`id` 就是稳定键。

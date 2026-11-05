@@ -24,10 +24,9 @@ description: Orchestrate explore-first SUT self-learning — accounts → browse
 1. `INDEX.project.md` 与 `knowledge/wiki/index.md`（已有切片、勿重复冻登录接口）；`uv run tuner-config show --json` 取地址、激活环境与 `channels.browser`。
    体检没做过或缺配置时先走 `health-check`。
 2. **账号**（只读，禁止拷进仓库/evidence/inbox）：
-   1. `data/sut-accounts.local.yaml`（gitignore，首选）
-   2. 否则 `config/env_local.py` 的 `TEST_ACCOUNT`
-   3. 都没有则停，让工程师按 `data/sut-accounts.example.yaml` 补本机文件
-3. 垂直切片：优先 `knowledge/wiki/domain-notes/<sut>/profile.md` 的「先学切片」；没有再问工程师。一个模块，不是全站爬。
+   1. `data/sut-accounts.local.yaml`（gitignore，唯一来源）
+   2. 没有则停，让工程师按 `data/sut-accounts.example.yaml` 补本机文件
+3. 垂直切片：问工程师先学哪个模块（对照 `INDEX.project.md` 已有切片，勿重复）。一个模块，不是全站爬。
 4. 源码根：config `KNOWLEDGE.source_roots`（本机路径）；没有再问，并用 `maintain-config` 记下。有路径则跑 `sut-source-to-design`。
 
 ## Skills / agents（顺序）

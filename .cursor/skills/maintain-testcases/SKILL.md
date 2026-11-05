@@ -1,6 +1,6 @@
 ---
 name: maintain-testcases
-version: 1.7.0
+version: 1.8.0
 group: action
 description: Creates and updates functional testcases so each case is its own Markdown file under assets/testcases/<module>/<suite>/<Case-ID>.md, with suite notes in that folder's README. Uses a TestLink-style template (summary, preconditions, numbered steps, expected results, status). Cases trace to knowledge/requirements (REQ ids) and data/accounts. One maintain-testcases session is one commit plus one line per case in assets/testcases/CHANGELOG.md with bumped versions; the commit body lists each case as 首次创建 or 变更原因. Use when the user asks to 编写/生成/维护测试用例, add a module or suite, or mentions assets/testcases or a case ID. Do not use for testdesign click-paths or behave .feature files.
 ---
@@ -45,7 +45,7 @@ id_prefix: User-Login
 type: 正向
 status: 就绪
 execution: 手工
-stages: [冒烟]
+stages: [系统测试]
 source: <依据路径或需求名>
 version: 1.0.0
 confidence: medium
@@ -65,7 +65,7 @@ confidence: medium
 - 预期：进入首页或个人中心
 ```
 
-反向用例是另一个文件，例如 `User-Login-wrong-password.md`，`type: 反向`。可选节：`## 摘要`、`## 测试数据`、`## 备注`。不知道重要性就不写 `importance`。`stages` 可选，列表元素只取 `冒烟` 或 `系统测试`，例如 `stages: [冒烟]` 或 `stages: [冒烟, 系统测试]`；不标注就省略。
+反向用例是另一个文件，例如 `User-Login-wrong-password.md`，`type: 反向`。可选节：`## 摘要`、`## 测试数据`、`## 备注`。不知道重要性就不写 `importance`。`stages` 写这条用例应在哪些阶段执行，列表元素只取 `单元`、`冒烟`、`系统测试`、`回归`。**新建用例一律写出该字段，默认 `stages: [系统测试]`**；只有来源（如 `tests/smoke/` 目录、需求或用户）明确说是冒烟、回归或单元时，才改成 `[冒烟]`、`[回归]`、`[单元]` 或多个，例如 `[冒烟, 系统测试]`。维护已有用例时若缺该字段，补上 `[系统测试]`。
 
 套件 README：
 

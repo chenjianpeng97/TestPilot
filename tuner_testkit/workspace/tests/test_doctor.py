@@ -42,7 +42,6 @@ def test_fresh_scaffold_reports_gaps(tmp_path: Path) -> None:
     assert checks["knowledge.defects"]["status"] == "info"
     assert checks["knowledge.ddl"]["status"] == "missing"
     assert checks["knowledge.wiki"]["status"] == "info"  # index.md stub exists, no pages yet
-    assert checks["knowledge.sut_profile"]["status"] == "missing"
     assert checks["dna.version"]["status"] == "missing"  # scaffolded with --no-ai
 
 
@@ -51,9 +50,6 @@ def test_configured_workspace(tmp_path: Path) -> None:
     scaffold(ws, with_ai=False)
     (ws / "knowledge" / "ddl" / "main").mkdir(parents=True, exist_ok=True)
     (ws / "knowledge" / "ddl" / "main" / "orders.sql").write_text("create table orders (id int);\n", encoding="utf-8")
-    profile = ws / "knowledge" / "wiki" / "domain-notes" / "acme" / "profile.md"
-    profile.parent.mkdir(parents=True, exist_ok=True)
-    profile.write_text("---\nkind: domain-note\n---\n# Acme\n", encoding="utf-8")
     (ws / "data" / "sut-accounts.local.yaml").write_text(
         "accounts:\n  - id: qa-admin\n    role: admin\n    password: x\n", encoding="utf-8"  # secret-scan: allow
     )
@@ -61,10 +57,9 @@ def test_configured_workspace(tmp_path: Path) -> None:
             "ui_base_url": "https://acme", "placeholders": [], "databases": {"main": {}},
             "channels": {"browser": "cursor-browser"}, "ports": {}, "knowledge": {"source_roots": ["D:/src"], "api_docs": []}}
     checks = _by_id(run_doctor(ws, config_loader=_config(view)))
-    assert checks["config.urls"]["status"] == "ok"
+    assert checks["config.api_url"]["status"] == "ok"
     assert checks["data.accounts"]["status"] == "ok"
     assert checks["knowledge.ddl"]["status"] == "ok"
-    assert checks["knowledge.sut_profile"]["status"] == "ok"
     assert checks["knowledge.source_roots"]["status"] == "ok"
     assert checks["channels.browser"]["detail"].endswith("cursor-browser")
 
@@ -93,3 +88,31 @@ def test_defect_library_counts_and_errors(tmp_path: Path) -> None:
     path.write_text(path.read_text(encoding="utf-8").replace("（待填）", "已填写"), encoding="utf-8")
     checks = _by_id(run_doctor(ws, config_loader=_config(view)))
     assert checks["knowledge.defects"] == {**checks["knowledge.defects"], "status": "ok", "detail": "激活 1"}
+
+
+def test_checks_carry_tier_and_ok_ignores_feature_checks() -> None:
+    from tuner_testkit.workspace.doctor import FEATURE_GROUPS, _Report
+
+    report = _Report()
+    report.add("config.api_url", "ok", "x")
+    report.add("knowledge.ddl", "missing", "x")
+    report.add("ports.log-source", "missing", "x", group="ports")
+    tiers = {c["id"]: c["tier"] for c in report.checks}
+    assert tiers == {"config.api_url": "core", "knowledge.ddl": "feature", "ports.log-source": "feature"}
+    assert report.summary("core")["missing"] == 0
+    assert report.summary("feature")["missing"] == 2
+    assert {"knowledge", "ports", "trace"} == set(FEATURE_GROUPS)
+
+
+def test_capabilities_report_ready_and_blockers() -> None:
+    from tuner_testkit.workspace.doctor import _capabilities, _Report
+
+    report = _Report()
+    for check_id in ("layout.dirs", "config.ui_url", "data.accounts", "channels.browser"):
+        report.add(check_id, "ok", "x")
+    report.add("knowledge.source_roots", "info", "未配置源码根", fix="maintain-config")
+    caps = {c["id"]: c for c in _capabilities(report.checks)}
+    assert caps["ui-run"]["ready"] is True
+    assert caps["source"]["ready"] is False
+    assert caps["source"]["blockers"][0]["id"] == "knowledge.source_roots"
+    assert caps["backend-log"]["blockers"][0]["detail"] == "检查项不存在"

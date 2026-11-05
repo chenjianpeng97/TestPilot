@@ -39,6 +39,7 @@ uv run tuner-workspace migrate knowledge             # 打印迁移计划（dry-
 uv run tuner-workspace migrate knowledge --apply     # assets/{ddl,domain-notes,usecases,explore,design} → knowledge/
 ```
 
+- `doctor` 每条检查带 `tier`：`core`（目录、前后端地址、数据库、账号、浏览器通道、DNA、hooks）与 `feature`（`knowledge.*` / `ports.*` / `trace.*`）；顶层 `ok` 只看 core，另有 `summary_core` / `summary_feature`。`capabilities[]` 把每项功能（执行测试单、探索、读源码、查后端日志……）映射到它依赖的检查，给出 `ready` 与 `blockers`，定义在 `doctor.py` 的 `CAPABILITIES`。
 - `doctor` 的检查项与状态（`ok / info / warn / missing / error`）见 `tuner_testkit/workspace/doctor.py`；skill `health-check` 读它的 JSON。
 - `changelog` 的库清单与行格式见 `docs/spec/metadata-conventions.md` §4；平台仓里只检查带 `INDEX.project.md` 的子 workspace。
   紧急绕过一次：`TUNER_SKIP_CHANGELOG_CHECK=1`。

@@ -2,7 +2,7 @@
 description: Functional testcases live one case per file under assets/testcases/<module>/<suite>/<Case-ID>.md; suite notes live in that folder's README; cases trace to knowledge/requirements and keep a library changelog
 globs: assets/testcases/**
 alwaysApply: false
-version: 1.5.0
+version: 1.6.0
 ---
 
 # testcases — 功能用例集
@@ -21,7 +21,7 @@ version: 1.5.0
 
 - 文件名等于 `id`。一级标题是 `<id> <title>`。
 - `type` 为 `正向` 或 `反向`。`status` 为 `就绪` 或 `废弃`。`execution` 为 `手工` 或 `自动`。
-- `stages` 可选，非空列表，元素为 `冒烟` 或 `系统测试`；表示应在哪些测试阶段执行。
+- `stages` 非空列表，元素取 `单元`、`冒烟`、`系统测试`、`回归`，表示应在哪些测试阶段执行。新建用例默认写 `stages: [系统测试]`；省略等同于 `系统测试`。
 - `requirements` 列出覆盖的需求 ID（`REQ-…`，文件在 `knowledge/requirements/`）；`data` 列出 `data/<path>` 或 `account:<id>`。
 - `## 步骤` 从 `### 1` 连续编号。每步有 `- 操作：` 和 `- 预期：`。
 - 套件级、不属于单条用例的说明写在套件 README 的 `## 详情`。

@@ -22,7 +22,9 @@ TYPES = {"正向", "反向"}
 STATUSES = {"就绪", "废弃"}
 EXECUTIONS = {"手工", "自动"}
 IMPORTANCES = {"低", "中", "高"}
-STAGES = {"冒烟", "系统测试"}
+# 用例应在哪个测试阶段执行。省略 stages 等同于 ["系统测试"]（DEFAULT_STAGE）。
+STAGES = {"单元", "冒烟", "系统测试", "回归"}
+DEFAULT_STAGE = "系统测试"
 REQ_ID = re.compile(r"^REQ-[A-Za-z0-9][A-Za-z0-9_-]*$")
 ROOT_FILES = {"README.md", "CHANGELOG.md"}
 

@@ -60,7 +60,7 @@
 `config/` 只回答「在哪、用什么」，是这些信息的唯一来源；`knowledge/wiki` 只解释为什么，引用配置键名，不重复写值。
 
 - 提交的 `config/env.py`（占位与非密钥）被 gitignore 的 `config/env_local.py` 覆盖；多套环境写在 `ENVIRONMENTS`，`tuner-config use <name>` 切换。
-- 分类：被测系统环境（`TEST_UI_BASE_URL`、`TEST_BASE_URL`、`DATABASES`、`TEST_ACCOUNT`）、运维通道 `OPS`、端口绑定 `PORTS`、执行通道 `CHANNELS`、知识位置 `KNOWLEDGE`。字段见 `docs/spec/config-syntax.md`。
+- 分类：被测系统环境（`TEST_UI_BASE_URL`、`TEST_BASE_URL`、`DATABASES`；测试账号在 `data/sut-accounts.local.yaml`）、运维通道 `OPS`、端口绑定 `PORTS`、执行通道 `CHANNELS`、知识位置 `KNOWLEDGE`。字段见 `docs/spec/config-syntax.md`。
 - LLM 判断当前环境与通道只用 `tuner-config show --json`（密钥打码）；改配置走 `maintain-config` skill，改完跑 `tuner-config validate`。
 
 ## 6. 任务分诊
@@ -84,7 +84,7 @@ flowchart TD
   Q -->|"需要新工具"| App["create-app"]
 ```
 
-- **开场 / 体检**：`health-check` 先跑 `tuner-workspace doctor --json`，缺配置交给 `maintain-config`，只能人定的（日志通道等）走 `tuner-task ask`。
+- **开场 / 体检**：`health-check` 先跑 `tuner-workspace doctor --json`，先看 `core` 基础项（地址、数据库、账号、浏览器通道等），再看 `capabilities`（各功能需要的配置：源码仓、后端日志、API 文档等是否就绪），按用户要用的功能补缺口，配置交给 `maintain-config`，只能人定的走 `tuner-task ask`。
 - **发布任务**：`tuner-task create` 写入 `work/tasks/`。测试设计走 `derive-test-design`，端到端点击报告走 `run-test-execution`。
 - **功能用例**：`maintain-testcases`，落在 `assets/testcases/<模块>/<套件>/<用例ID>.md`，`source` 优先指向 `knowledge/requirements/` 的需求 ID。
 - **测试单**：`maintain-testsheet` 组单，`execute-testsheet` 逐条执行并回写，缺陷用 `maintain-defectlib` 沉淀到 `knowledge/defects/`，报告用 `generate-test-report`。

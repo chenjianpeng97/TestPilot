@@ -7,6 +7,16 @@ knowledge, ``tuner-task ask`` for decisions only a person can make (log channel)
 prints a secret.
 
 Statuses: ``ok`` · ``info`` · ``warn`` · ``missing`` · ``error``.
+
+Tiers: every check carries ``tier``. ``core`` is what any workspace needs
+(layout, UI / API URLs, databases, accounts, browser channel, DNA, git hooks) and
+alone decides ``ok``. ``feature`` checks (knowledge, ports, traceability) are
+prerequisites of individual capabilities.
+
+Capabilities: ``capabilities[]`` maps each thing the AI components can do (execute a
+test sheet, explore the SUT, read source, query backend logs ...) to the checks it
+needs, with ``ready`` and the missing checks. ``health-check`` asks the user which
+capabilities they intend to use and fills only those gaps.
 """
 from __future__ import annotations
 
@@ -41,6 +51,27 @@ REQUIRED_DIRS: tuple[str, ...] = (
 LEGACY_DIRS: tuple[str, ...] = ("assets/ddl", "assets/domain-notes", "assets/usecases", "assets/explore", "assets/design")
 REQ_ID_RE = re.compile(r"\bREQ-[A-Za-z0-9][A-Za-z0-9_-]*\b")
 DEFAULT_STALE_DAYS = 90
+# Check-id prefixes (the part before the first dot) that belong to the feature tier.
+FEATURE_GROUPS: frozenset[str] = frozenset({"knowledge", "ports", "trace"})
+
+# capability id -> (title, skills / agents that rely on it, required check ids)
+CAPABILITIES: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
+    ("assets", "写用例 / 测试单 / 测试设计 / 缺陷", "maintain-testcases, maintain-testsheet, derive-test-design, maintain-defectlib",
+     ("layout.dirs",)),
+    ("ui-run", "浏览器点击执行（测试单、测试设计）", "execute-testsheet, run-test-execution",
+     ("config.ui_url", "data.accounts", "channels.browser")),
+    ("explore", "探索被测系统（自学习）", "sut-self-learning, explore-sut",
+     ("config.ui_url", "data.accounts", "channels.browser")),
+    ("api-auto", "接口自动化（behave / pytest）", "maintain-bdd-assets, maintain-pytest, freeze-api-objects",
+     ("config.api_url", "data.accounts")),
+    ("db-check", "数据核对 / 造数", "maintain-pytest, create-action-word",
+     ("config.databases",)),
+    ("ddl", "导出表结构", "dump-ddl", ("config.databases", "knowledge.ddl")),
+    ("source", "读被测系统源码生成设计知识", "sut-source-to-design", ("knowledge.source_roots",)),
+    ("api-docs", "导入接口文档（OpenAPI）", "tuner-openapi-import, freeze-api-objects", ("knowledge.api_docs",)),
+    ("backend-log", "查询后端日志做取证", "execute-testsheet, run-test-execution", ("ports.log-source",)),
+    ("wiki", "沉淀需求与业务知识", "maintain-wiki", ("knowledge.wiki",)),
+)
 
 
 class _Report:
@@ -49,10 +80,15 @@ class _Report:
 
     def add(self, check_id: str, status: str, detail: str, *, fix: str = "", group: str = "") -> None:
         assert status in STATUSES, status
-        self.checks.append({"id": check_id, "group": group or check_id.split(".", 1)[0], "status": status, "detail": detail, "fix": fix})
+        prefix = check_id.split(".", 1)[0]
+        tier = "feature" if (group or prefix) in FEATURE_GROUPS or prefix in FEATURE_GROUPS else "core"
+        self.checks.append(
+            {"id": check_id, "group": group or prefix, "tier": tier, "status": status, "detail": detail, "fix": fix}
+        )
 
-    def summary(self) -> dict[str, int]:
-        return {status: sum(1 for c in self.checks if c["status"] == status) for status in STATUSES}
+    def summary(self, tier: str | None = None) -> dict[str, int]:
+        rows = [c for c in self.checks if tier is None or c["tier"] == tier]
+        return {status: sum(1 for c in rows if c["status"] == status) for status in STATUSES}
 
 
 def _load_config(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -99,12 +135,31 @@ def run_doctor(
     _check_dna(root, report)
     _check_hooks(root, report)
     summary = report.summary()
+    core = report.summary("core")
     return {
         "root": str(root),
-        "ok": summary["error"] == 0 and summary["missing"] == 0,
+        "ok": core["error"] == 0 and core["missing"] == 0,
         "summary": summary,
+        "summary_core": core,
+        "summary_feature": report.summary("feature"),
+        "capabilities": _capabilities(report.checks),
         "checks": report.checks,
     }
+
+
+def _capabilities(checks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_id = {row["id"]: row for row in checks}
+    rows: list[dict[str, Any]] = []
+    for cap_id, title, used_by, requires in CAPABILITIES:
+        blockers = []
+        for check_id in requires:
+            row = by_id.get(check_id)
+            if row is None:
+                blockers.append({"id": check_id, "status": "missing", "detail": "检查项不存在", "fix": ""})
+            elif row["status"] != "ok":
+                blockers.append({"id": check_id, "status": row["status"], "detail": row["detail"], "fix": row["fix"]})
+        rows.append({"id": cap_id, "title": title, "used_by": used_by, "requires": list(requires), "ready": not blockers, "blockers": blockers})
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -136,20 +191,25 @@ def _check_config(view: dict[str, Any], validation: dict[str, Any], report: _Rep
         report.add("config.env_local", "missing", "没有 config/env_local.py", fix="maintain-config（从 config/env_local.py.example 起）")
     else:
         report.add("config.env_local", "ok", f"mode={view.get('mode')} active={view.get('active_env')}")
-    api = view.get("api_base_url") or ""
-    ui = view.get("ui_base_url") or ""
-    if not api:
-        report.add("config.urls", "missing", "TEST_BASE_URL 为空", fix="maintain-config")
-    elif _looks_template(api) or _looks_template(ui):
-        report.add("config.urls", "warn", f"地址像模板示例：ui={ui} api={api}", fix="maintain-config")
-    else:
-        report.add("config.urls", "ok", f"ui={ui} api={api}")
+    for check_id, key, label in (
+        ("config.ui_url", "ui_base_url", "TEST_UI_BASE_URL（前端地址）"),
+        ("config.api_url", "api_base_url", "TEST_BASE_URL（后端 / 网关地址）"),
+    ):
+        url = view.get(key) or ""
+        if not url:
+            report.add(check_id, "missing", f"{label} 为空", fix="maintain-config（只要 host，不要路径）")
+        elif _looks_template(url):
+            report.add(check_id, "warn", f"{label} 像模板示例：{url}", fix="maintain-config")
+        else:
+            report.add(check_id, "ok", f"{label}：{url}")
     placeholders = view.get("placeholders") or []
     db_placeholders = [p for p in placeholders if p.startswith("DATABASES.")]
     if db_placeholders:
         report.add("config.databases", "warn", f"数据源仍是占位：{', '.join(db_placeholders)}", fix="maintain-config")
     elif view.get("databases"):
         report.add("config.databases", "ok", f"别名：{', '.join(sorted(view['databases']))}")
+    else:
+        report.add("config.databases", "info", "没有配置任何数据源（数据核对、导出表结构需要）", fix="maintain-config")
     if validation.get("errors"):
         rows = [f"{f['code']}: {f['message']}" for f in validation.get("findings", []) if f.get("severity") == "error"]
         report.add("config.validate", "error", "；".join(rows), fix="tuner-config validate → maintain-config")
@@ -272,11 +332,6 @@ def _check_knowledge(root: Path, view: dict[str, Any], report: _Report, *, stale
         report.add("knowledge.wiki", "missing", "没有 knowledge/wiki/index.md", fix="maintain-wiki")
     else:
         report.add("knowledge.wiki", "ok" if pages else "info", f"wiki 页面 {len(pages)} 个", fix="" if pages else "maintain-wiki ingest")
-    profiles = list((wiki / "domain-notes").glob("*/profile.md")) if (wiki / "domain-notes").is_dir() else []
-    if profiles:
-        report.add("knowledge.sut_profile", "ok", f"被测系统说明：{profiles[0].relative_to(root).as_posix()}")
-    else:
-        report.add("knowledge.sut_profile", "missing", "没有 knowledge/wiki/domain-notes/<sut>/profile.md（被测系统是谁）", fix="health-check 首次运行模式")
 
 
 def _check_defects(root: Path, report: _Report) -> None:

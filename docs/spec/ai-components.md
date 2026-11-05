@@ -42,7 +42,7 @@ skill 在 front-matter 用 `group` 分组。**对外入口**只有三组 13 个�
 
 | skill | 做什么 |
 | --- | --- |
-| `health-check` | 体检：缺哪些配置、DDL 是否过期、哪些环节还没接通（`tuner-workspace doctor`） |
+| `health-check` | 配置体检：基础项（前后端地址、数据库、`data/` 测试账号、浏览器通道、目录、DNA、hooks）加各功能的就绪度（执行测试单、探索、读源码、查后端日志、导入 API 文档……各缺什么配置）；按用户要用的功能补缺口（`tuner-workspace doctor`） |
 | `maintain-config` | 用 LLM 读写 `config/`：环境、URL、数据库、OPS 通道、端口绑定、浏览器通道 |
 | `upgrade-framework` | 升级 `tuner-testkit` 和 DNA（规则、skill、规范），处理本地覆盖 |
 | `create-app` | 在 `apps/` 新建独立工具，含端口适配器模板（如后端日志） |
