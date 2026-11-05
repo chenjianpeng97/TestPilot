@@ -44,6 +44,17 @@
 
 ---
 
+## 2026-11-05 — tuner-testkit 7.1.0（账号单一来源、测试单四态结果、健康检查按能力分层）
+
+- **目的**: 账号只放 `data/sut-accounts.local.yaml`；测试单结果收敛为 通过/失败/阻塞/忽略；doctor 与 health-check 按能力分层。
+- **路径**:
+  - `tuner_testkit/accounts.py`、`tuner_testkit/config*.py`、`tuner_testkit/workspace/doctor.py`
+  - `tuner_testkit/apps/testreport/**`
+  - `docs/spec/testsheet-step-record.md`、`docs/spec/ai-components.md`、`docs/spec/config-syntax.md`、`docs/spec/data-syntax.md`
+  - `.cursor/skills/{health-check,maintain-testsheet,execute-testsheet,generate-testsheet-report,maintain-config}/SKILL.md`
+  - `docs/changelog/TEMPLATE-7.1.0.md`
+- **不在同步范围**: 无；下游按 TEMPLATE-7.1.0.md 迁移账号与旧测试单结果词
+- **验证**: `manifest --check`；`tuner-index-ai --check`；pytest 502 通过；GitHub CI 与发布 workflow
 ## 2026-11-05 — tuner-testkit 7.0.2（平台主干改名为 main）
 
 - **commit**: `6f17421`

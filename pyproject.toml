@@ -1,6 +1,6 @@
 [project]
 name = "tuner-testkit"
-version = "7.0.2"
+version = "7.1.0"
 description = "TestPilot: shared test runtime, recorders, and DNA overlay for SUT test workspaces"
 readme = "README.md"
 license = "MIT"
