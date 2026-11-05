@@ -74,7 +74,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
         _emit_issues(data)
         rows = data["rows"]
         _emit(
-            "rows total={total} 通过={通过} 失败={失败} 部分通过={部分通过} 未执行={未执行} 阻塞={阻塞}".format(**rows)
+            "rows total={total} 通过={通过} 失败={失败} 阻塞={阻塞} 忽略={忽略} 待执行={待执行}".format(**rows)
             + f" errors={data['errors']} warnings={data['warnings']}"
         )
     elif args.out:

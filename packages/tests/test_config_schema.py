@@ -9,7 +9,7 @@ from tuner_testkit.config import apply_selected_environment
 
 
 def _env(**kw):
-    base = dict(DATABASES={}, TEST_BASE_URL="", TEST_UI_BASE_URL="", TEST_ACCOUNT=None, ACTIVE_ENV=None,
+    base = dict(DATABASES={}, TEST_BASE_URL="", TEST_UI_BASE_URL="", ACTIVE_ENV=None,
                 OPS={}, CHANNELS={"browser": "playwright-mcp"}, PORTS={}, KNOWLEDGE={"api_docs": [], "source_roots": []})
     base.update(kw)
     return SimpleNamespace(**base)
@@ -48,7 +48,6 @@ def test_selected_environment_applies_machine_level_sections() -> None:
 def test_describe_masks_secrets_and_reports_placeholders() -> None:
     env = _env(
         DATABASES={"main": {"host": "db", "password": "real-pass"}, "x": {"password": "CHANGE_ME"}},  # secret-scan: allow
-        TEST_ACCOUNT={"username": "qa", "password": "p"},  # secret-scan: allow
         OPS={"rancher": {"url": "https://r", "token": "t0k"}},  # secret-scan: allow
         TEST_BASE_URL="http://api",
         ACTIVE_ENV="dev",
@@ -56,7 +55,7 @@ def test_describe_masks_secrets_and_reports_placeholders() -> None:
     view = cs.describe(env, available=["dev"], mode="environments", env_local=True)
     assert view["databases"]["main"]["password"] == cs.MASK
     assert view["databases"]["x"]["password"] == cs.PLACEHOLDER_MARK
-    assert view["account"]["password"] == cs.MASK
+    assert "account" not in view
     assert view["ops"]["rancher"] == {"url": "https://r", "token": cs.MASK}
     assert view["ui_base_url"] == "http://api" and view["ui_base_url_explicit"] is False
     assert view["placeholders"] == ["DATABASES.x.password"]

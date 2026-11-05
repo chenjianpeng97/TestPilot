@@ -29,7 +29,7 @@ uv run tuner-config validate --json
 
 | 用户要改 | 写到 | 说明 |
 | --- | --- | --- |
-| 前端 / 后端地址、数据源连接、默认账号 | `env_local.py` → `ENVIRONMENTS.<env>` 的 `TEST_UI_BASE_URL` / `TEST_BASE_URL` / `DATABASES` / `TEST_ACCOUNT` | 只要 host，不要路径 |
+| 前端 / 后端地址、数据源连接 | `env_local.py` → `ENVIRONMENTS.<env>` 的 `TEST_UI_BASE_URL` / `TEST_BASE_URL` / `DATABASES` | 只要 host，不要路径 |
 | 新增一套环境 | `env_local.py` → `ENVIRONMENTS` 加一项，然后 `uv run tuner-config use <env>` | 生产类名字会打 warning，按用户选择执行 |
 | 新数据源别名（如第二个库） | 类型写 `config/env_overlay.py`（无密码），连接写 `env_local.py` 该环境的 `DATABASES` | |
 | Rancher / SSH 跳板 / 日志平台 | `env_local.py` → `ENVIRONMENTS.<env>.OPS.<通道>` | 键名按适配器 README；密钥只在这里 |

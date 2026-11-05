@@ -31,13 +31,15 @@ accounts:
   - id: qa-admin                 # 任务、提问、用例、changelog 里只用 id 指代账号
     role: admin                  # 被测系统里的角色名
     permissions: ["user:manage", "order:approve"]
-    email: qa@acme.example
+    email: qa@acme.example       # 登录名；也可写 username
     password: "…"
     notes: 首次登录要改密码
 ```
 
 - `role` / `permissions` 与被测系统的角色权限表对应。权限表本身是知识，写在 `knowledge/wiki/domain-notes/<sut>/roles.md`。
 - 权限类用例按 `role` 挑账号；反向用例用缺少某权限的账号。
+- 账号的**唯一来源**是本文件，config 里没有账号字段。代码取账号用 `tuner_testkit.accounts.resolve_account()`：
+  默认第一个账号，`TUNER_ACCOUNT=<id>` 或 `role=` 指定其他；`TEST_USERNAME` / `TEST_PASSWORD` 环境变量仅作 CI 注入覆盖，不是账号存放处。
 - `tuner-workspace doctor` 的 `data.accounts` 检查账号文件存在、无 `replace-me` 占位、每个账号都有 `role`。
 
 ## 3. 测试数据与用例双向关联

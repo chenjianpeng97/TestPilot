@@ -12,8 +12,8 @@
 #      - 否则按扁平写法合并
 #   4. 环境变量 TUNER_DB_<ALIAS>_HOST/PORT/USER/PASSWORD/NAME
 #      （未带别名的 TUNER_DB_HOST 等继续覆盖默认别名 "main"）
-#      TEST_BASE_URL / TEST_UI_BASE_URL / TEST_USERNAME / TEST_PASSWORD 同样优先于本模块。
-#   探索登录优先读 data/sut-accounts.local.yaml（gitignore；模板 data/sut-accounts.example.yaml）
+#      TEST_BASE_URL / TEST_UI_BASE_URL 同样优先于本模块。
+#   测试账号只放 data/sut-accounts.local.yaml（gitignore；模板 data/sut-accounts.example.yaml），不写在 config。
 #
 # 切换激活环境：tuner-config use <name>（写入 gitignore 的 .active_env）。
 
@@ -56,10 +56,6 @@ DATABASES: dict[str, dict[str, Any]] = {
 # API 执行的网关地址与 UI 地址（仅 host，不带路径！）。环境变量优先于此处。
 TEST_BASE_URL = ""
 TEST_UI_BASE_URL = ""
-
-# behave api stage 登录账号。优先级：behave -D username/-D password
-# > 环境变量 TEST_USERNAME/TEST_PASSWORD > 此处。
-TEST_ACCOUNT: dict[str, str] | None = None
 
 # 运维通道（按环境）：Rancher / SSH 跳板 / 日志平台等。只给端口适配器（apps/）读，kit 不解释内容。
 # 真实地址与密钥写在 env_local.ENVIRONMENTS.<name>.OPS。

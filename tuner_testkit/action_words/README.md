@@ -57,7 +57,7 @@ uv run python -m tuner_testkit.action_words catalog --out artifacts/catalogs/act
 - 输出为 `Result` 的 JSON，其中 `cleanup` 列出本次插入的 `表 → 行 id`；
 - 退出码 0/1 对应成功/失败；
 - API 类 word 需要登录凭据，解析顺序：`--username/--password` >
-  环境变量 `TEST_USERNAME` / `TEST_PASSWORD` > `config/env.py` 的 `TEST_ACCOUNT`；
+  环境变量 `TEST_USERNAME` / `TEST_PASSWORD`（CI 注入）> `data/sut-accounts.local.yaml`；
 - 登录 API Object 由 `TEST_LOGIN_API_MODULE` / `TEST_LOGIN_API_ATTR` 配置
   （或向 `ActionContext` 显式传入 `bearer_token`）。
 

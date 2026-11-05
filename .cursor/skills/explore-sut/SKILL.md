@@ -25,9 +25,8 @@ description: Explore-first session against a live SUT through the configured bro
 
 1. Read `INDEX.project.md` and `knowledge/wiki/index.md`. Run `uv run tuner-config show --json`: note `ui_base_url`,
    `api_base_url`, `active_env`, and `channels.browser` (the browser channel to drive).
-   Load login from **`data/sut-accounts.local.yaml`** if it exists; else
-   `config/env_local.py` `TEST_ACCOUNT`. Copy `data/sut-accounts.example.yaml`
-   when neither exists and **stop**. Never write the password into evidence,
+   Load login from **`data/sut-accounts.local.yaml`** (the only account source). Copy
+   `data/sut-accounts.example.yaml` when it is missing and **stop**. Never write the password into evidence,
    explore notes, inbox, or git.
 2. Pick a **vertical slice** (e.g. workspace → project → issue), not a full-site crawl.
 3. Navigate with the configured browser channel (tool mapping in `docs/spec/browser-channel.md`). After each meaningful

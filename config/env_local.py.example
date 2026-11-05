@@ -31,10 +31,6 @@ ENVIRONMENTS = {
         },
         "TEST_UI_BASE_URL": "http://127.0.0.1:3000",
         "TEST_BASE_URL": "http://127.0.0.1:8080",
-        "TEST_ACCOUNT": {
-            "username": "admin",
-            "password": "CHANGE_ME",
-        },
         # 运维通道：只给端口适配器读（如 log-source），键名由适配器 README 约定。
         # "OPS": {
         #     "ssh": {"host": "10.0.0.5", "user": "deploy", "password": "CHANGE_ME", "log_dir": "/var/log/app"},
@@ -53,10 +49,6 @@ ENVIRONMENTS = {
         },
         "TEST_UI_BASE_URL": "http://127.0.0.1:3001",
         "TEST_BASE_URL": "http://127.0.0.1:8081",
-        "TEST_ACCOUNT": {
-            "username": "admin",
-            "password": "CHANGE_ME",
-        },
     },
     # PostgreSQL 示例（宿主机 127.0.0.1:5432，不要用容器名）：
     # "plane": {
@@ -71,11 +63,10 @@ ENVIRONMENTS = {
     #         },
     #     },
     #     "TEST_BASE_URL": "http://localhost:8000",
-    #     "TEST_ACCOUNT": {"username": "CHANGE_ME", "password": "CHANGE_ME"},
     # },
 }
 
 # 无 ENVIRONMENTS 时可用旧扁平写法（与上面二选一即可）：
 # DATABASES = {"main": {"host": "127.0.0.1", "port": 3306, "user": "root", "password": "CHANGE_ME", "database": "example"}}
 # TEST_BASE_URL = "http://127.0.0.1:8080"
-# TEST_ACCOUNT = {"username": "admin", "password": "CHANGE_ME"}
+# 测试账号不写在这里：用 data/sut-accounts.local.yaml

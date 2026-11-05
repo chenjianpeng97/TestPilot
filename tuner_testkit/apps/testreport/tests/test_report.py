@@ -134,7 +134,7 @@ def test_draft_numbers_and_verdict(sheet_factory, tmp_path: Path) -> None:
     assert first["action"] == "1、输入账号和口令，点击登录\n2、刷新页面"
     assert first["pre"].startswith("账号已存在。\n测试数据：")
     assert {case["result"] for case in parsed["cases"]} == {"通过", "未通过", "未执行"}
-    assert any(note.startswith("未执行或阻塞用例1个") for note in parsed["notes"])
+    assert any(note.startswith("阻塞用例1个") for note in parsed["notes"])
 
 
 def test_draft_reads_dotted_dates(sheet_factory, tmp_path: Path) -> None:

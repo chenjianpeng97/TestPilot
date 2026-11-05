@@ -7,7 +7,7 @@ Sections
 --------
 Per environment (inside ``env_local.ENVIRONMENTS[<name>]``, or flat):
 
-* ``TEST_UI_BASE_URL`` / ``TEST_BASE_URL`` / ``TEST_ACCOUNT`` — scalars
+* ``TEST_UI_BASE_URL`` / ``TEST_BASE_URL`` — scalars (test accounts live in ``data/sut-accounts.local.yaml``)
 * ``DATABASES`` — alias -> connection dict (merged per alias)
 * ``OPS`` — operations channels (``rancher`` / ``ssh`` / ``log_platform`` …), read by port adapters
 
@@ -26,7 +26,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-PROFILE_SCALARS: tuple[str, ...] = ("TEST_BASE_URL", "TEST_UI_BASE_URL", "TEST_ACCOUNT")
+PROFILE_SCALARS: tuple[str, ...] = ("TEST_BASE_URL", "TEST_UI_BASE_URL")
 PROFILE_DICT_SECTIONS: tuple[str, ...] = ("DATABASES", "OPS")
 WORKSPACE_SECTIONS: tuple[str, ...] = ("CHANNELS", "PORTS", "KNOWLEDGE")
 ALL_SECTIONS: tuple[str, ...] = (*PROFILE_SCALARS, *PROFILE_DICT_SECTIONS, *WORKSPACE_SECTIONS)
@@ -67,7 +67,7 @@ def apply_sections(target: Any, source: Mapping[str, Any], *, sections: Iterable
         value = source[name]
         if name in PROFILE_SCALARS:
             if value:
-                setattr(target, name, value if name == "TEST_ACCOUNT" else str(value))
+                setattr(target, name, str(value))
             continue
         if not isinstance(value, dict):
             continue
@@ -120,14 +120,13 @@ def find_placeholders(value: Any, prefix: str = "") -> list[str]:
 def describe(env: Any, *, available: list[str] | None = None, mode: str = "unknown", env_local: bool = False) -> dict[str, Any]:
     """Masked, JSON-able view of the merged config (what ``tuner-config show --json`` prints)."""
     databases = getattr(env, "DATABASES", None) or {}
-    account = getattr(env, "TEST_ACCOUNT", None)
     channels = {**DEFAULT_CHANNELS, **(getattr(env, "CHANNELS", None) or {})}
     knowledge = {**DEFAULT_KNOWLEDGE, **(getattr(env, "KNOWLEDGE", None) or {})}
     ops = getattr(env, "OPS", None) or {}
     ui = str(getattr(env, "TEST_UI_BASE_URL", "") or "")
     api = str(getattr(env, "TEST_BASE_URL", "") or "")
     placeholders = find_placeholders(
-        {"DATABASES": databases, "TEST_ACCOUNT": account or {}, "OPS": ops}
+        {"DATABASES": databases, "OPS": ops}
     )
     return {
         "mode": mode,
@@ -138,7 +137,6 @@ def describe(env: Any, *, available: list[str] | None = None, mode: str = "unkno
         "api_base_url": api,
         "ui_base_url_explicit": bool(ui),
         "databases": mask(databases),
-        "account": mask(account) if isinstance(account, Mapping) else None,
         "channels": channels,
         "ports": dict(getattr(env, "PORTS", None) or {}),
         "knowledge": mask(knowledge),

@@ -20,7 +20,7 @@ description: config/ 只回答「在哪、用什么」：被测系统环境、�
 | `config/env_local.py.example` | 是 | `env_local.py` 的模板 |
 
 后者覆盖前者：`env.py` → `env_overlay.py` → `env_local.py`（顶层的 workspace 级段 + 激活环境的 profile）→ 环境变量
-（`TUNER_DB_<ALIAS>_*`、`TEST_BASE_URL`、`TEST_UI_BASE_URL`、`TEST_USERNAME` / `TEST_PASSWORD`）。
+（`TUNER_DB_<ALIAS>_*`、`TEST_BASE_URL`、`TEST_UI_BASE_URL`）。
 激活环境：`TUNER_ENV` > `config/.active_env` > `env_local.ACTIVE_ENV` > `ENVIRONMENTS` 唯一的键。
 
 ## 2. 分类
@@ -32,7 +32,6 @@ description: config/ 只回答「在哪、用什么」：被测系统环境、�
 | `TEST_UI_BASE_URL` | str | 前端地址（仅 host）。空则沿用 `TEST_BASE_URL` |
 | `TEST_BASE_URL` | str | 后端 / API 网关地址（仅 host） |
 | `DATABASES` | `{alias: {type, host, port, user, password, database, schema?}}` | 数据源；按别名合并。`type` = `mysql` / `sqlserver` / `postgres` |
-| `TEST_ACCOUNT` | `{username, password}` | behave api stage 的默认登录账号；探索与执行优先 `data/sut-accounts.local.yaml` |
 
 ### 2.2 运维通道 `OPS`（每个环境一套）
 

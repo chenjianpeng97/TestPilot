@@ -30,7 +30,6 @@ def _target() -> SimpleNamespace:
             }
         },
         TEST_BASE_URL="",
-        TEST_ACCOUNT=None,
         ACTIVE_ENV=None,
     )
 
@@ -42,12 +41,10 @@ def _catalog(**profiles: dict) -> SimpleNamespace:
 _DEV = {
     "DATABASES": {"main": {"host": "dev.example", "database": "devdb"}},
     "TEST_BASE_URL": "http://dev.example:8000",
-    "TEST_ACCOUNT": {"username": "dev-user", "password": "secret"},
 }
 _UAT = {
     "DATABASES": {"main": {"host": "uat.example", "database": "uatdb"}},
     "TEST_BASE_URL": "http://uat.example:8000",
-    "TEST_ACCOUNT": {"username": "uat-user", "password": "secret"},
 }
 
 
@@ -137,7 +134,6 @@ class TestApplySelectedEnvironment:
         assert target.DATABASES["main"]["type"] == "mysql"
         assert target.DATABASES["main"]["database"] == "devdb"
         assert target.TEST_BASE_URL == "http://dev.example:8000"
-        assert target.TEST_ACCOUNT["username"] == "dev-user"
 
     def test_applies_test_ui_base_url(self):
         target = _target()

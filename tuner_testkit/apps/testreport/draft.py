@@ -16,7 +16,8 @@ from . import mdparse
 from .profile import REQUIRED_KEYS, Profile
 
 TODO_MARK = "<!-- TODO"
-FOLD = {"通过": "通过", "失败": "未通过", "部分通过": "未通过", "未执行": "未执行", "阻塞": "未执行"}
+# 报告里只有 通过 / 未通过 / 未执行 三栏：失败 -> 未通过；阻塞、忽略、留空（待执行）-> 未执行。
+FOLD = {"通过": "通过", "失败": "未通过", "阻塞": "未执行", "忽略": "未执行"}
 LEVELS = ("1级", "2级", "3级", "4级")
 TYPE_COLUMNS = (("需求", "需求缺陷"), ("设计", "设计缺陷"), ("编码", "编码缺陷"), ("文档", "文档缺陷"), ("其它", "其它缺陷"))
 DEFAULT_CRITERIA_HINT = "画像没有「通过准则」"
@@ -231,10 +232,10 @@ def compose(
         "result:",
         f"  total: {rows['total']}",
         f"  passed: {rows['通过']}",
-        f"  partial: {rows['部分通过']}",
         f"  failed: {rows['失败']}",
         f"  blocked: {rows['阻塞']}",
-        f"  not_run: {rows['未执行']}",
+        f"  ignored: {rows['忽略']}",
+        f"  pending: {rows['待执行']}",
         f"testsheets: [{', '.join(sheets_rel)}]",
         f"profile: {profile_rel}",
         "evidence: []",
@@ -450,9 +451,16 @@ def compose(
         basis_note = _basis_note(sheet, root)
         if basis_note:
             notes.append(basis_note)
-    for label, items in (("未执行或阻塞", stats["not_run_notes"]), ("部分通过", stats["partial_notes"])):
+    for label, results in (("阻塞", ("阻塞",)), ("忽略", ("忽略",)), ("待执行", ("待执行",))):
+        items = [n for n in stats["not_run_notes"] if n["result"] in results]
         if items:
-            parts = [f"{n['id']}（{mdparse.plain(n['record']) or '测试单未写原因'}）" for n in items]
+            parts = []
+            for n in items:
+                text = mdparse.plain(n["record"]) or "测试单未写原因"
+                stuck = "；".join(
+                    f"第{b['step']}步卡在{b['blocker']}" + (f"，缺少{b['missing']}" if b["missing"] else "") for b in n.get("blockers", [])
+                )
+                parts.append(f"{n['id']}（{text}" + (f"；{stuck}" if stuck else "") + "）")
             notes.append(f"{label}用例{len(items)}个：" + "；".join(parts) + "。")
     for para in notes or ["无。"]:
         out += [para, ""]

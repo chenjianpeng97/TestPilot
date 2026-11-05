@@ -165,7 +165,7 @@ uv run python -m tuner_testkit.action_words catalog [-o out.json] # 全量目录
 
 ## 敏感信息
 
-- 凭据优先级：显式入参 > `TEST_USERNAME/TEST_PASSWORD` 环境变量 > `config/.env`；
+- 凭据优先级：显式入参 > `TEST_USERNAME/TEST_PASSWORD` 环境变量（CI 注入）> `data/sut-accounts.local.yaml`；
 - **不得**在 word 源码、example_params、日志中硬编码 token / 密码 / Cookie。
 
 ## 新增 word 检查清单

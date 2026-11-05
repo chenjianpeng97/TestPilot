@@ -1,6 +1,6 @@
 ---
 name: maintain-testsheet
-version: 1.2.0
+version: 1.4.0
 group: action
 description: Builds and updates a test sheet under assets/testsheet/<round>/testsheet.md, copying the selected ready cases from assets/testcases into that round's testcase/ folder and linking only those copies. Use when the user asks to 生成测试单, 维护测试单, 测试单, or mentions assets/testsheet or testsheet.md. Executing the sheet and writing results case by case is execute-testsheet. Do not use to edit the case library, write a testdesign, or curate assets/testreport.
 ---
@@ -46,7 +46,7 @@ assets/testsheet/<轮次>/
 | 测试点 | `<type>-<title>`，如 `正向-打开登录页` |
 | 数据 | `## 测试数据` 的第一句。没有则用 `## 前置条件` 的第一句 |
 | 预期要点 | 第一步 `预期` 收成一句 |
-| 结果 | `未执行` |
+| 结果 | 空（还没执行） |
 | 实测记录 | 空 |
 
 分组：模块 README 的 `## 范围` 已有编号块时，用那些块做 `##`。块内按套件 README 的顺序各做一个 `###` 和一张表。没有范围编号时，一个套件一个 `##`。不要把一个套件拆进两张表，除非用户要求。
@@ -62,7 +62,8 @@ assets/testsheet/<轮次>/
 
 ## 怎么填
 
-- 「结果」只写：通过、失败、部分通过、未执行、阻塞。
+- 「结果」只写四个词：通过、失败、阻塞、忽略；还没测就留空。没有「部分通过」「未执行」。
+  失败 = 产品行为与预期不符；阻塞 = 执行不下去、给不出通过或失败的结论；忽略 = 本轮有意不测，「实测记录」必须写原因。
 - 「实测记录」写看到的文案、单号、库存状态。不写密码、token、Cookie。账号只写 `account_id` 或登录名。
 - 截图放本目录，文件名用用例 ID。
 - 缺陷「严重程度」只写：致命、严重、一般、轻微。「类型」只写：需求、设计、编码、文档、其它。「状态」只写：激活、已解决、关闭。
@@ -78,9 +79,8 @@ assets/testsheet/<轮次>/
 | 证据 | 本目录 `evidence/` |
 | 通过 | 0 |
 | 失败 | 0 |
-| 部分通过 | 0 |
-| 未执行 | N |
 | 阻塞 | 0 |
+| 忽略 | 0 |
 
 ## 测的时候先记住
 
@@ -92,7 +92,7 @@ assets/testsheet/<轮次>/
 
 | 用例 | 测试点 | 数据 | 预期要点 | 结果 | 实测记录 |
 | --- | --- | --- | --- | --- | --- |
-| [<用例ID>](testcase/<模块>/<套件>/<用例ID>.md) | 正向-<title> | <数据> | <预期要点> | 未执行 | |
+| [<用例ID>](testcase/<模块>/<套件>/<用例ID>.md) | 正向-<title> | <数据> | <预期要点> | | |
 
 ## 缺陷
 
@@ -101,7 +101,7 @@ assets/testsheet/<轮次>/
 | 无 | | | | | | |
 ```
 
-五个计数之和等于表内行数。新建时未执行等于 N，其余为 0。
+四个计数加上结果为空的行数（待执行）等于表内行数。新建时四个计数都是 0，所有行的结果为空。
 
 「日期」写起止，例如 `2026-10-21 ~ 2026-10-23`，只测一天写一个日期。「版本」写被测版本号，不知道留空。
 
@@ -120,12 +120,14 @@ assets/testsheet/<轮次>/
 
 ## Update
 
-- 回写时只改 `testsheet.md` 的结果、实测记录、计数和缺陷。结果只用那五个词。
+- 回写时改 `testsheet.md` 的结果、实测记录、计数和缺陷。结果只用那五个词。
+- 步骤级的执行情况（卡在哪一步、为什么、缺什么、证据）写在 `testcase/` 副本对应步骤下，格式见 `docs/spec/testsheet-step-record.md`；
+  `testsheet.md` 的「实测记录」只写一句摘要。副本里步骤的「操作」「预期」不因执行记录而改动。
 - 增删一行或改了结果后，跑 `uv run tuner-testreport stats assets/testsheet/<轮次> --check`。「共 N 条」和五个计数按它输出的 `rows` 计数改，不手算。它报的取值或缺陷列问题一并改掉。
 - 缺陷修好并回归后，不要删缺陷行，把状态改为关闭，用例结果改成回归的结果。
 - 从本单移除一条：删表行，删 `testcase/` 里对应副本。开头写明 ID 和原因。菜单权限这类配置问题、以及改由别的页面跟踪的条目，是移除，不记失败，也不进缺陷表。
 - 缺陷只记产品行为。
-- 本轮步骤缺前置或判定规则：改 `testcase/` 里的副本。要沉淀回用例库时另走 `maintain-testcases`，改完不要把测试单的链接改回用例库。
+- 本轮步骤缺前置或判定规则：改 `testcase/` 里副本的步骤正文（执行记录之外的部分）。要沉淀回用例库时另走 `maintain-testcases`，改完不要把测试单的链接改回用例库。
 - 截图放本目录，文件名用用例 ID。一组结果的图放在对应小节下，写成 `![](文件名.png)`。接口 JSON 放 `evidence/`。造数写 `packages/action_words/db_seed/`，不在 `assets/testsheet/` 里放可执行脚本。
 
 ## 留痕

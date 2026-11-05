@@ -7,8 +7,8 @@
   SQL Server 共存，word 通过类元数据 ``datasource`` 声明目标库）；
 - ``db``: 默认别名（``main``）的便捷入口，等价 ``get_db(DEFAULT_ALIAS)``；
 - ``api_token``: 首次访问时通过可配置的登录 API Object 换取；凭据解析
-  顺序为 显式入参 > 环境变量 ``TEST_USERNAME`` / ``TEST_PASSWORD`` >
-  ``config.env.TEST_ACCOUNT``；behave 的 ``-D username/password`` 由
+  顺序为 显式入参 > 环境变量 ``TEST_USERNAME`` / ``TEST_PASSWORD``（CI 注入） >
+  ``data/sut-accounts.local.yaml``（``tuner_testkit.accounts``）；behave 的 ``-D username/password`` 由
   environment 钩子解析后显式传入。
 
 一个 behave scenario / 一次 CLI 运行对应一个 ActionContext 实例，
@@ -17,7 +17,6 @@ token 与各别名的 DB 连接在实例内缓存。
 from __future__ import annotations
 
 import os
-from typing import Any
 
 from tuner_testkit.db import DEFAULT_ALIAS, DbClient
 
@@ -72,16 +71,17 @@ class ActionContext:
         return self._token
 
     def _resolve_credentials(self) -> tuple[str, str]:
-        from tuner_testkit.config import load_project_env
+        username = self._username or os.getenv("TEST_USERNAME") or ""
+        password = self._password or os.getenv("TEST_PASSWORD") or ""
+        if not username or not password:
+            from tuner_testkit.accounts import resolve_account
 
-        env_config = load_project_env()
-
-        account: dict[str, Any] = getattr(env_config, "TEST_ACCOUNT", None) or {}
-        username = self._username or os.getenv("TEST_USERNAME") or account.get("username") or ""
-        password = self._password or os.getenv("TEST_PASSWORD") or account.get("password") or ""
+            account = resolve_account()
+            username = username or account.get("username", "")
+            password = password or account.get("password", "")
         if not username or not password:
             raise RuntimeError(
-                "缺少登录凭据：请在 config/env.py 的 TEST_ACCOUNT 填入，"
+                "缺少登录凭据：请在 data/sut-accounts.local.yaml 写账号（模板 data/sut-accounts.example.yaml），"
                 "或通过 behave -D username=... -D password=...，"
                 "或环境变量 TEST_USERNAME / TEST_PASSWORD 提供"
             )

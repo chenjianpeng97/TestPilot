@@ -361,7 +361,6 @@ def validate_project_config(root: Path | None = None) -> dict[str, Any]:
             findings.append(Finding("info", "env.ui_url", "TEST_UI_BASE_URL 为空，UI 沿用 TEST_BASE_URL", "maintain-config"))
         active_profile = {
             "DATABASES": getattr(env, "DATABASES", None) or {},
-            "TEST_ACCOUNT": getattr(env, "TEST_ACCOUNT", None) or {},
             "OPS": getattr(env, "OPS", None) or {},
         }
         for dotted in find_placeholders(active_profile):

@@ -8,6 +8,8 @@ from typing import Any
 
 from . import mdparse
 from .sheet import (
+    PENDING,
+    STEP_STATUSES,
     DEFECT_STATUSES,
     DEFECT_TYPES,
     EXECUTED_RESULTS,
@@ -34,9 +36,12 @@ def _rel(path: Path, root: Path) -> str:
 
 def _count(results: list[str]) -> dict[str, int]:
     counts = {name: 0 for name in RESULTS}
+    counts[PENDING] = 0
     for result in results:
-        if result in counts:
+        if result in RESULTS:
             counts[result] += 1
+        else:
+            counts[PENDING] += 1
     counts_total = {"total": len(results)}
     counts_total.update(counts)
     return counts_total
@@ -44,9 +49,19 @@ def _count(results: list[str]) -> dict[str, int]:
 
 def _fold(counts: dict[str, int]) -> dict[str, int]:
     passed = counts["通过"]
-    failed = counts["失败"] + counts["部分通过"]
-    not_run = counts["未执行"] + counts["阻塞"]
-    return {"designed": counts["total"], "executed": passed + failed, "passed": passed, "failed": failed, "not_run": not_run}
+    failed = counts["失败"]
+    # 阻塞、忽略、待执行都算「未执行」；分别给出数量供报告展开。
+    not_run = counts["阻塞"] + counts["忽略"] + counts[PENDING]
+    return {
+        "designed": counts["total"],
+        "executed": passed + failed,
+        "passed": passed,
+        "failed": failed,
+        "not_run": not_run,
+        "blocked": counts["阻塞"],
+        "ignored": counts["忽略"],
+        "pending": counts[PENDING],
+    }
 
 
 def _check_declared(sheet: Sheet, counts: dict[str, int]) -> None:
@@ -72,6 +87,53 @@ def _check_declared(sheet: Sheet, counts: dict[str, int]) -> None:
             )
 
 
+def _check_step_records(sheet: Sheet) -> None:
+    """Execution records under the steps of a case copy (docs/spec/testsheet-step-record.md).
+
+    * a record must use 执行 = 通过 / 失败 / 阻塞;
+    * 失败 / 阻塞 need 实际 and 卡点, 阻塞 also needs 缺少;
+    * a case whose result is 阻塞 / 失败 needs at least one 失败 / 阻塞 step with 卡点;
+    * evidence paths (relative to the sheet directory) should exist.
+    """
+    for row in sheet.cases:
+        if row.copy is None:
+            continue
+        stuck = 0
+        for number, step in enumerate(row.copy.steps, start=1):
+            where = f"{row.id} 第 {number} 步"
+            if not step.status:
+                if step.actual or step.blocker or step.missing or step.evidence:
+                    sheet.issues.append(Issue("error", "step_record_status", sheet.name, f"{where} 写了执行记录但没有「执行：」", row.line))
+                continue
+            if step.status not in STEP_STATUSES:
+                sheet.issues.append(
+                    Issue("error", "step_record_status", sheet.name, f"{where} 「执行：{step.status}」只能是 {'、'.join(STEP_STATUSES)}", row.line)
+                )
+                continue
+            if step.status in ("失败", "阻塞"):
+                if step.blocker:
+                    stuck += 1
+                else:
+                    sheet.issues.append(Issue("error", "step_record_blocker", sheet.name, f"{where} {step.status}但没有「卡点：」", row.line))
+                if not step.actual:
+                    sheet.issues.append(Issue("error", "step_record_actual", sheet.name, f"{where} {step.status}但没有「实际：」", row.line))
+            if step.status == "阻塞" and not step.missing:
+                sheet.issues.append(Issue("error", "step_record_missing", sheet.name, f"{where} 阻塞但没有「缺少：」（缺什么才能继续）", row.line))
+            for raw in [p.strip() for p in step.evidence.replace("，", ",").replace("、", ",").split(",") if p.strip()]:
+                if not (sheet.dir / raw).is_file():
+                    sheet.issues.append(Issue("warn", "step_record_evidence", sheet.name, f"{where} 证据不存在：{raw}", row.line))
+        if row.result in ("阻塞", "失败") and not stuck:
+            sheet.issues.append(
+                Issue(
+                    "error",
+                    "step_record_missing_case",
+                    sheet.name,
+                    f"{row.id} 结果是{row.result}，但副本里没有「执行：失败/阻塞」加「卡点：」的步骤记录",
+                    row.line,
+                )
+            )
+
+
 def _case_entry(seq: int, row: CaseRow, sheet: Sheet, root: Path) -> dict[str, Any]:
     copy = row.copy
     record_text, record_images = mdparse.strip_images(row.record)
@@ -88,7 +150,18 @@ def _case_entry(seq: int, row: CaseRow, sheet: Sheet, root: Path) -> dict[str, A
         "execution": copy.execution if copy else "",
         "preconditions": copy.preconditions if copy else "",
         "test_data": copy.test_data if copy else row.data,
-        "steps": [{"action": s.action, "expected": s.expected} for s in (copy.steps if copy else [])],
+        "steps": [
+            {
+                "action": s.action,
+                "expected": s.expected,
+                "status": s.status,
+                "actual": s.actual,
+                "blocker": s.blocker,
+                "missing": s.missing,
+                "evidence": s.evidence,
+            }
+            for s in (copy.steps if copy else [])
+        ],
         "result": row.result,
         "record": record_text,
         "record_images": record_images,
@@ -118,6 +191,7 @@ def build(sheet_dirs: list[Path], *, root: Path) -> dict[str, Any]:
     sheet_out = []
     for sheet in sheets:
         resolve_defect_cases(sheet, known_ids)
+        _check_step_records(sheet)
         per_sheet = _count([row.result for row in sheet.cases])
         _check_declared(sheet, per_sheet)
         sheet_out.append(
@@ -162,7 +236,7 @@ def build(sheet_dirs: list[Path], *, root: Path) -> dict[str, Any]:
 
     referenced = {case_id for item in defect_items for case_id in item["cases"]}
     first_executed = [cid for cid in order if final_results[cid] in EXECUTED_RESULTS or cid in referenced]
-    first_failed = [cid for cid in first_executed if final_results[cid] in ("失败", "部分通过") or cid in referenced]
+    first_failed = [cid for cid in first_executed if final_results[cid] == "失败" or cid in referenced]
     first_round = {
         "designed": len(order),
         "executed": len(first_executed),
@@ -221,13 +295,17 @@ def build(sheet_dirs: list[Path], *, root: Path) -> dict[str, Any]:
     }
 
     cases = [_case_entry(seq, *merged[cid], root) for seq, cid in enumerate(order, start=1)]
+    def blockers_of(case: dict[str, Any]) -> list[dict[str, Any]]:
+        return [
+            {"step": i, "status": s["status"], "blocker": s["blocker"], "missing": s["missing"], "evidence": s["evidence"]}
+            for i, s in enumerate(case["steps"], start=1)
+            if s["status"] in ("失败", "阻塞")
+        ]
+
     not_run_notes = [
-        {"id": c["id"], "result": c["result"], "record": c["record"]}
+        {"id": c["id"], "result": c["result"] or PENDING, "record": c["record"], "blockers": blockers_of(c)}
         for c in cases
-        if c["result"] in ("未执行", "阻塞")
-    ]
-    partial_notes = [
-        {"id": c["id"], "result": c["result"], "record": c["record"]} for c in cases if c["result"] == "部分通过"
+        if c["result"] in ("阻塞", "忽略", "")
     ]
 
     modules = []
@@ -249,7 +327,6 @@ def build(sheet_dirs: list[Path], *, root: Path) -> dict[str, Any]:
         "defects": defects,
         "modules": modules,
         "not_run_notes": not_run_notes,
-        "partial_notes": partial_notes,
         "cases": cases,
         "issues": issues,
         "errors": sum(1 for issue in issues if issue["level"] == "error"),

@@ -9,8 +9,15 @@ from urllib.parse import unquote
 
 from . import mdparse
 
-RESULTS = ("通过", "失败", "部分通过", "未执行", "阻塞")
-EXECUTED_RESULTS = ("通过", "失败", "部分通过")
+# 用例执行状态只有四个；结果格留空 = 还没执行（待执行，不是状态，stats 里单独计数）。
+RESULTS = ("通过", "失败", "阻塞", "忽略")
+PENDING = "待执行"
+EXECUTED_RESULTS = ("通过", "失败")
+# 旧词 -> 迁移提示
+LEGACY_RESULTS = {
+    "部分通过": "「部分通过」已取消：有产品问题记「失败」，没法判定记「阻塞」",
+    "未执行": "「未执行」已取消：还没测就把结果格留空，有意不测记「忽略」并写原因",
+}
 SEVERITIES = ("致命", "严重", "一般", "轻微")
 DEFECT_TYPES = ("需求", "设计", "编码", "文档", "其它")
 DEFECT_STATUSES = ("激活", "已解决", "关闭")
@@ -18,7 +25,9 @@ DEFECT_COLUMNS = ("编号", "用例", "现象", "严重程度", "类型", "状�
 INFO_KEYS = ("测试人", "日期", "版本", "环境", "证据")
 
 _TOTAL_RE = re.compile(r"共\s*(\d+)\s*条")
-_STEP_FIELD_RE = re.compile(r"^-\s*(操作|预期)\s*[：:]\s*(.*)$")
+_STEP_FIELD_RE = re.compile(r"^-\s*(操作|预期|执行|实际|卡点|缺少|证据)\s*[：:]\s*(.*)$")
+# Execution record under a step of a testsheet copy (docs/spec/testsheet-step-record.md).
+STEP_STATUSES = ("通过", "失败", "阻塞")
 
 
 @dataclass
@@ -37,6 +46,11 @@ class Issue:
 class Step:
     action: str
     expected: str
+    status: str = ""  # 执行：通过 / 失败 / 阻塞；空 = 这一步没有执行记录
+    actual: str = ""  # 实际：看到了什么
+    blocker: str = ""  # 卡点：卡在哪里、为什么
+    missing: str = ""  # 缺少：缺什么才能继续（阻塞必填）
+    evidence: str = ""  # 证据：相对测试单目录的路径，多个用顿号或逗号分隔
 
 
 @dataclass
@@ -135,7 +149,7 @@ def parse_case_copy(path: Path) -> CaseCopy:
 
 
 def _parse_step(text: str) -> Step:
-    fields: dict[str, list[str]] = {"操作": [], "预期": []}
+    fields: dict[str, list[str]] = {"操作": [], "预期": [], "执行": [], "实际": [], "卡点": [], "缺少": [], "证据": []}
     current: str | None = None
     for line in text.split("\n"):
         match = _STEP_FIELD_RE.match(line.strip())
@@ -144,7 +158,18 @@ def _parse_step(text: str) -> Step:
             fields[current].append(match.group(2).strip())
         elif current and line.strip():
             fields[current].append(line.strip())
-    return Step(action=" ".join(fields["操作"]).strip(), expected=" ".join(fields["预期"]).strip())
+    def joined(name: str) -> str:
+        return " ".join(fields[name]).strip()
+
+    return Step(
+        action=joined("操作"),
+        expected=joined("预期"),
+        status=joined("执行"),
+        actual=joined("实际"),
+        blocker=joined("卡点"),
+        missing=joined("缺少"),
+        evidence=joined("证据"),
+    )
 
 
 def _module_notes(sheet_dir: Path) -> list[ModuleNote]:
@@ -218,6 +243,8 @@ def parse_sheet(sheet_dir: Path) -> Sheet:
                 value = row[1] if len(row) > 1 else ""
                 if row[0] in RESULTS:
                     declared_counts[row[0]] = value
+                elif row[0] in LEGACY_RESULTS:
+                    issues.append(Issue("warn", "legacy_count_row", name, f"本轮信息「{row[0]}」行已取消，请删除：{LEGACY_RESULTS[row[0]]}"))
                 else:
                     info[row[0]] = value
             continue
@@ -265,8 +292,11 @@ def _parse_case_rows(table: mdparse.Table, sheet_dir: Path, name: str, issues: l
             continue
         case_id, target = link
         result = record.get("结果", "").strip()
-        if result not in RESULTS:
-            issues.append(Issue("error", "result_invalid", name, f"{case_id} 结果「{result}」不在 {'/'.join(RESULTS)}", line))
+        if result and result not in RESULTS:
+            hint = LEGACY_RESULTS.get(result) or f"只能是 {'/'.join(RESULTS)}，没执行就留空"
+            issues.append(Issue("error", "result_invalid", name, f"{case_id} 结果「{result}」不合法：{hint}", line))
+        if result == "忽略" and not record.get("实测记录", "").strip():
+            issues.append(Issue("error", "ignore_reason", name, f"{case_id} 结果是忽略，实测记录必须写原因", line))
         copy: CaseCopy | None = None
         copy_path = (sheet_dir / target).resolve()
         if target.startswith(("http://", "https://")) or not copy_path.is_file():

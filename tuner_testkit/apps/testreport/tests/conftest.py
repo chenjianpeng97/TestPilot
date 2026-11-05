@@ -41,6 +41,12 @@ confidence: medium
 - 预期：仍停留在当前页
 """
 
+# Execution record appended under step 2 of a copy (docs/spec/testsheet-step-record.md).
+STEP_RECORDS = {
+    "失败": "- 执行：失败\n- 实际：仍然进入了页面\n- 卡点：锁定后第 6 次登录没有被拒绝\n",
+    "阻塞": "- 执行：阻塞\n- 实际：登录接口返回 502\n- 卡点：后端服务不可用\n- 缺少：后端恢复\n",
+}
+
 MODULE_README = """---
 kind: testcase-module
 id: account
@@ -74,9 +80,10 @@ def write_sheet(root: Path, name: str, rows: list[tuple[str, str, str]], *, coun
     (sheet_dir / "testcase" / "账号" / "README.md").write_text(MODULE_README, encoding="utf-8")
     table_rows = []
     for case_id, title, result in rows:
-        (suite_dir / f"{case_id}.md").write_text(
-            CASE_TEMPLATE.format(id=case_id, title=title, type="反向", expected=f"{title}的预期"), encoding="utf-8"
-        )
+        text = CASE_TEMPLATE.format(id=case_id, title=title, type="反向", expected=f"{title}的预期")
+        if result in STEP_RECORDS:
+            text += STEP_RECORDS[result]
+        (suite_dir / f"{case_id}.md").write_text(text, encoding="utf-8")
         table_rows.append(
             f"| [{case_id}](testcase/账号/登录/{case_id}.md) | 反向-{title} | 账号 | {title}的预期 | {result} | 记录{case_id} |"
         )
@@ -88,7 +95,7 @@ def write_sheet(root: Path, name: str, rows: list[tuple[str, str, str]], *, coun
 
 ## 怎么填
 
-- 「结果」只写：通过、失败、部分通过、未执行、阻塞。
+- 「结果」只写：通过、失败、阻塞、忽略；还没测就留空。
 
 ## 本轮信息
 
@@ -100,9 +107,8 @@ def write_sheet(root: Path, name: str, rows: list[tuple[str, str, str]], *, coun
 | 证据 | 本目录 `evidence/` |
 | 通过 | {counts.get('通过', 0)} |
 | 失败 | {counts.get('失败', 0)} |
-| 部分通过 | {counts.get('部分通过', 0)} |
-| 未执行 | {counts.get('未执行', 0)} |
 | 阻塞 | {counts.get('阻塞', 0)} |
+| 忽略 | {counts.get('忽略', 0)} |
 
 ## 测的时候先记住
 

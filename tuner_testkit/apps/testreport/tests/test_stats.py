@@ -16,11 +16,11 @@ NEW_DEFECTS = """| 编号 | 用例 | 现象 | 严重程度 | 类型 | 状态 | �
 NEW_ROWS = [
     ("Login-Fixed-frozen", "冻结账号拒绝", "通过"),
     ("Login-Open-locked", "锁定账号拒绝", "失败"),
-    ("Login-Wait-deleted", "已删除账号拒绝", "部分通过"),
+    ("Login-Wait-deleted", "已删除账号拒绝", "失败"),
     ("Login-Plain-valid", "正确账号登录", "通过"),
     ("Login-Skip-expired", "过期账号", "阻塞"),
 ]
-NEW_COUNTS = {"通过": 2, "失败": 1, "部分通过": 1, "阻塞": 1}
+NEW_COUNTS = {"通过": 2, "失败": 2, "阻塞": 1}
 
 
 def _codes(data: dict) -> set[str]:
@@ -31,8 +31,10 @@ def test_clean_sheet_has_no_errors(sheet_factory, tmp_path: Path) -> None:
     sheet = sheet_factory(rows=NEW_ROWS, counts=NEW_COUNTS, total=5, defects=NEW_DEFECTS)
     data = build([sheet], root=tmp_path)
     assert data["errors"] == 0, data["issues"]
-    assert data["rows"] == {"total": 5, "通过": 2, "失败": 1, "部分通过": 1, "未执行": 0, "阻塞": 1}
-    assert data["final"] == {"designed": 5, "executed": 4, "passed": 2, "failed": 2, "not_run": 1}
+    assert data["rows"] == {"total": 5, "通过": 2, "失败": 2, "阻塞": 1, "忽略": 0, "待执行": 0}
+    assert data["final"] == {
+        "designed": 5, "executed": 4, "passed": 2, "failed": 2, "not_run": 1, "blocked": 1, "ignored": 0, "pending": 0
+    }
 
 
 def test_first_round_and_regression_from_defects(sheet_factory, tmp_path: Path) -> None:
@@ -69,8 +71,8 @@ def test_legacy_sheet_reports_drift(sheet_factory, tmp_path: Path) -> None:
 | 无 | Login-Fixed-frozen | 冻结账号被放行 | 否 |关闭|
 """
     sheet = sheet_factory(
-        rows=[("Login-Fixed-frozen", "冻结账号拒绝", "通过"), ("Login-Plain-valid", "正确账号登录", "未执行")],
-        counts={"通过": 0, "失败": 1, "未执行": 1},
+        rows=[("Login-Fixed-frozen", "冻结账号拒绝", "通过"), ("Login-Plain-valid", "正确账号登录", "")],
+        counts={"通过": 0, "失败": 1},
         total=3,
         defects=legacy,
         info_extra="",
@@ -125,7 +127,16 @@ def test_case_copy_fields_feed_the_appendix(sheet_factory, tmp_path: Path) -> No
     assert case["preconditions"] == "账号已存在。"
     assert [step["action"] for step in case["steps"]] == ["输入账号和口令，点击登录", "刷新页面"]
     assert data["modules"][0]["scope"] == "账号登录与锁定。"
-    assert data["not_run_notes"] == [{"id": "Login-Skip-expired", "result": "阻塞", "record": "记录Login-Skip-expired"}]
+    assert data["not_run_notes"] == [
+        {
+            "id": "Login-Skip-expired",
+            "result": "阻塞",
+            "record": "记录Login-Skip-expired",
+            "blockers": [{"step": 2, "status": "阻塞", "blocker": "后端服务不可用", "missing": "后端恢复", "evidence": ""}],
+        }
+    ]
+    failed = next(c for c in data["cases"] if c["id"] == "Login-Open-locked")
+    assert failed["steps"][1]["actual"] == "仍然进入了页面"
 
 
 def test_cli_check_exit_codes(sheet_factory) -> None:
@@ -134,3 +145,75 @@ def test_cli_check_exit_codes(sheet_factory) -> None:
     assert cli.main(["stats", str(clean), "--check"]) == 0
     assert cli.main(["stats", str(drift), "--check"]) == 1
     assert cli.main(["stats", str(drift)]) == 0
+
+
+def _copy_of(sheet: Path, case_id: str) -> Path:
+    return sheet / "testcase" / "账号" / "登录" / f"{case_id}.md"
+
+
+def test_blocked_case_without_step_record_is_an_error(sheet_factory, tmp_path: Path) -> None:
+    sheet = sheet_factory(rows=NEW_ROWS, counts=NEW_COUNTS, total=5, defects=NEW_DEFECTS)
+    copy = _copy_of(sheet, "Login-Skip-expired")
+    text = copy.read_text(encoding="utf-8")
+    copy.write_text(text[: text.index("- 执行：")], encoding="utf-8")
+    data = build([sheet], root=tmp_path)
+    assert any(i["code"] == "step_record_missing_case" and "Login-Skip-expired" in i["detail"] for i in data["issues"])
+
+
+def test_step_record_field_rules(sheet_factory, tmp_path: Path) -> None:
+    sheet = sheet_factory(rows=NEW_ROWS, counts=NEW_COUNTS, total=5, defects=NEW_DEFECTS)
+    copy = _copy_of(sheet, "Login-Skip-expired")
+    text = copy.read_text(encoding="utf-8")
+    copy.write_text(text.replace("- 缺少：后端恢复\n", "").replace("- 执行：阻塞", "- 执行：卡住"), encoding="utf-8")
+    codes = {i["code"] for i in build([sheet], root=tmp_path)["issues"]}
+    assert "step_record_status" in codes
+    copy.write_text(text.replace("- 缺少：后端恢复\n", ""), encoding="utf-8")
+    codes = {i["code"] for i in build([sheet], root=tmp_path)["issues"]}
+    assert "step_record_missing" in codes
+    copy.write_text(text.replace("- 卡点：后端服务不可用\n", ""), encoding="utf-8")
+    codes = {i["code"] for i in build([sheet], root=tmp_path)["issues"]}
+    assert {"step_record_blocker", "step_record_missing_case"} <= codes
+
+
+def test_step_record_evidence_path_is_checked(sheet_factory, tmp_path: Path) -> None:
+    sheet = sheet_factory(rows=NEW_ROWS, counts=NEW_COUNTS, total=5, defects=NEW_DEFECTS)
+    copy = _copy_of(sheet, "Login-Skip-expired")
+    copy.write_text(copy.read_text(encoding="utf-8") + "- 证据：evidence/missing.png\n", encoding="utf-8")
+    issues = build([sheet], root=tmp_path)["issues"]
+    assert any(i["code"] == "step_record_evidence" and i["level"] == "warn" for i in issues)
+    (sheet / "evidence").mkdir()
+    (sheet / "evidence" / "missing.png").write_bytes(b"x")
+    issues = build([sheet], root=tmp_path)["issues"]
+    assert not any(i["code"] == "step_record_evidence" for i in issues)
+
+
+def test_only_four_states_and_blank_means_pending(sheet_factory, tmp_path: Path) -> None:
+    rows = [
+        ("Login-Fixed-frozen", "冻结账号拒绝", "通过"),
+        ("Login-Open-locked", "锁定账号拒绝", "失败"),
+        ("Login-Skip-expired", "过期账号", "阻塞"),
+        ("Login-Skip-ignored", "旧入口", "忽略"),
+        ("Login-Plain-valid", "正确账号登录", ""),
+    ]
+    sheet = sheet_factory(rows=rows, counts={"通过": 1, "失败": 1, "阻塞": 1, "忽略": 1}, total=5, defects=NEW_DEFECTS.split("\n| D1")[0] + "\n| 无 | | | | | | |\n")
+    data = build([sheet], root=tmp_path)
+    assert data["errors"] == 0, data["issues"]
+    assert data["rows"] == {"total": 5, "通过": 1, "失败": 1, "阻塞": 1, "忽略": 1, "待执行": 1}
+    assert data["final"]["not_run"] == 3 and data["final"]["ignored"] == 1 and data["final"]["pending"] == 1
+    assert {n["result"] for n in data["not_run_notes"]} == {"阻塞", "忽略", "待执行"}
+
+
+def test_retired_result_words_are_rejected_with_a_hint(sheet_factory, tmp_path: Path) -> None:
+    rows = [("Login-Fixed-frozen", "冻结账号拒绝", "部分通过"), ("Login-Plain-valid", "正确账号登录", "未执行")]
+    sheet = sheet_factory(rows=rows, counts={}, total=2, defects="| 编号 | 用例 | 现象 | 严重程度 | 类型 | 状态 | 是否阻塞后续 |\n| --- | --- | --- | --- | --- | --- | --- |\n| 无 | | | | | | |\n")
+    issues = [i for i in build([sheet], root=tmp_path)["issues"] if i["code"] == "result_invalid"]
+    assert len(issues) == 2
+    assert "记「失败」" in issues[0]["detail"] and "留空" in issues[1]["detail"]
+
+
+def test_ignored_case_needs_a_reason(sheet_factory, tmp_path: Path) -> None:
+    sheet = sheet_factory(rows=[("Login-Skip-ignored", "旧入口", "忽略")], counts={"忽略": 1}, total=1, defects="| 编号 | 用例 | 现象 | 严重程度 | 类型 | 状态 | 是否阻塞后续 |\n| --- | --- | --- | --- | --- | --- | --- |\n| 无 | | | | | | |\n")
+    path = sheet / "testsheet.md"
+    path.write_text(path.read_text(encoding="utf-8").replace("记录Login-Skip-ignored", ""), encoding="utf-8")
+    codes = _codes(build([sheet], root=tmp_path))
+    assert "ignore_reason" in codes
