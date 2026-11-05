@@ -29,8 +29,21 @@ class ProjectRootError(RuntimeError):
 _DEFAULT_RELATIVE = {
     "page_objects": "packages/page_objects",
     "api_objects": "packages/api_objects",
+    "action_words": "packages/action_words",
     "mocks": "data/mocks",
-    "ddl": "assets/ddl",
+    # knowledge layer — see docs/spec/knowledge-syntax.md
+    "knowledge": "knowledge",
+    "ddl": "knowledge/ddl",
+    "raw": "knowledge/raw",
+    "wiki": "knowledge/wiki",
+    "requirements": "knowledge/requirements",
+    "defects": "knowledge/defects",
+    # asset layer (Markdown) — see docs/spec/assets-knowledge-syntax.md
+    "assets": "assets",
+    "testcases": "assets/testcases",
+    "testsheet": "assets/testsheet",
+    "testdesign": "assets/testdesign",
+    "testreport": "assets/testreport",
     "config": "config",
     # artifacts layout — see docs/spec/artifacts-layout.md
     "artifacts": "artifacts",
@@ -51,6 +64,12 @@ _ENV_OVERRIDES = {
     "ddl": "TUNER_DDL_DIR",
     "artifacts": "TUNER_ARTIFACTS_DIR",
     "artifacts_page_test": "PAGE_TEST_ARTIFACTS_DIR",
+}
+
+# Pre-7.0 workspaces kept SUT knowledge under assets/. Until
+# ``tuner-workspace migrate knowledge --apply`` runs, read from the old place.
+LEGACY_RELATIVE = {
+    "ddl": "assets/ddl",
 }
 
 
@@ -146,8 +165,13 @@ def _paths_cached(root_str: str) -> dict[str, Path]:
             candidate = Path(env_val).expanduser()
             resolved[key] = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
             continue
-        rel = str(table.get(key) or default_rel).replace("\\", "/")
-        resolved[key] = (root / rel).resolve()
+        configured = table.get(key)
+        rel = str(configured or default_rel).replace("\\", "/")
+        path = (root / rel).resolve()
+        legacy = LEGACY_RELATIVE.get(key)
+        if not configured and legacy and not path.exists() and (root / legacy).is_dir():
+            path = (root / legacy).resolve()
+        resolved[key] = path
     return resolved
 
 
@@ -180,6 +204,11 @@ def mocks_dir() -> Path:
 
 def ddl_dir() -> Path:
     return asset_path("ddl")
+
+
+def knowledge_dir(kind: str | None = None) -> Path:
+    """``knowledge/`` (``kind=None``) or one of ``ddl`` / ``raw`` / ``wiki`` / ``requirements`` / ``defects``."""
+    return asset_path(kind or "knowledge")
 
 
 def config_dir() -> Path:

@@ -1,22 +1,22 @@
 ---
 description: Commits must follow Conventional Commits with a layer-aligned scope; the declared scope must cover the layers actually changed. Single source of truth is docs/spec/commit-convention.md.
 alwaysApply: true
-version: 1.2.0
+version: 1.3.0
 ---
 
-# 提交规范（Conventional Commits + 六层 scope）
+# 提交规范（Conventional Commits + 分层 scope）
 
 起草任何 git 提交信息时**必须**遵循 `docs/spec/commit-convention.md`：
 
 - 首行格式：`<type>(<scope>): <subject>`（不兼容变更加 `!`）。
 - `type` ∈ `feat|fix|refactor|docs|test|perf|chore|build|ci|style|revert`。
-- `scope` 用**对齐六层/资产类别**的值：`assets / apps / packages / api_objects /
+- `scope` 用**对齐分层/资产类别**的值：`knowledge / assets / apps / packages / api_objects /
   page_objects / action_words / tests / docs / rules / skills / agents / hooks /
-  init_repo / index / dogfood / work`（多层用逗号分隔，如 `feat(apps,packages): ...`；
-  `dogfood/**` 一律用 `dogfood`；`work/tasks` 用 `work`）。
+  init_repo / index / dogfood / work`（多层用逗号分隔，如 `feat(knowledge,assets): ...`；
+  `knowledge/**` 用 `knowledge`；`dogfood/**` 一律用 `dogfood`；`work/tasks` 用 `work`）。
 - **scope 必须覆盖本次真实改动涉及的层**（`packages` 是三个子资产层的上位 scope）。
 
-一眼可读优先：让人从提交信息就看出"更新了 assets、新增了 apps、录制了新的 api_objects"等。
+一眼可读优先：让人从提交信息就看出"ingest 了需求、更新了用例、录制了新的 api_objects"等。
 
-`tools/git-hooks/commit-msg` 会做确定性校验（格式 + scope↔改动一致性）；本地启用：
-`git config core.hooksPath tools/git-hooks`。合并/回滚提交跳过校验。
+`tools/git-hooks/commit-msg` 会做确定性校验（格式 + scope↔改动一致性）；`pre-commit` 另做密钥扫描与对象 changelog 检查。
+本地启用：`git config core.hooksPath tools/git-hooks`。合并/回滚提交跳过校验。

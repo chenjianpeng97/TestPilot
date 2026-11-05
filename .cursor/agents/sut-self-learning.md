@@ -1,7 +1,7 @@
 ---
 name: sut-self-learning
-version: 1.0.1
-description: Orchestrate explore-first SUT self-learning — accounts → Playwright MCP explore → evidence → freeze API/page objects → design knowledge → index, with an artifacts/inbox task log. Hand off to bdd-asset-pipeline only when Feature Sets are in scope. Do NOT use when the user explicitly requests pytest-only work.
+version: 1.1.0
+description: Orchestrate explore-first SUT self-learning — accounts → browser-channel explore (config CHANNELS.browser) → evidence → freeze API/page objects → design knowledge → index, with an artifacts/inbox task log. Hand off to bdd-asset-pipeline only when Feature Sets are in scope. Do NOT use when the user explicitly requests pytest-only work.
 ---
 
 # SUT self-learning orchestrator (upper half + optional handoff)
@@ -21,27 +21,28 @@ description: Orchestrate explore-first SUT self-learning — accounts → Playwr
 
 ## Inputs
 
-1. `INDEX.md` + 若存在 `INDEX.project.md`（已有切片、勿重复冻登录接口）。
+1. `INDEX.project.md` 与 `knowledge/wiki/index.md`（已有切片、勿重复冻登录接口）；`uv run tuner-config show --json` 取地址、激活环境与 `channels.browser`。
+   体检没做过或缺配置时先走 `health-check`。
 2. **账号**（只读，禁止拷进仓库/evidence/inbox）：
    1. `data/sut-accounts.local.yaml`（gitignore，首选）
    2. 否则 `config/env_local.py` 的 `TEST_ACCOUNT`
    3. 都没有则停，让工程师按 `data/sut-accounts.example.yaml` 补本机文件
-3. 垂直切片：优先 `assets/domain-notes/<sut>/profile.md` 的「先学切片」；没有再问工程师。一个模块，不是全站爬。
-4. 源码根：优先 `data/source-roots.local.yaml` 的本机绝对路径，仓内相对根见 `assets/domain-notes/<sut>/source-roots.md`。两处都没有再问。有路径则跑 `sut-source-to-design`。
+3. 垂直切片：优先 `knowledge/wiki/domain-notes/<sut>/profile.md` 的「先学切片」；没有再问工程师。一个模块，不是全站爬。
+4. 源码根：config `KNOWLEDGE.source_roots`（本机路径）；没有再问，并用 `maintain-config` 记下。有路径则跑 `sut-source-to-design`。
 
 ## Skills / agents（顺序）
 
 | 步 | 组件 | 产出 |
 | --- | --- | --- |
 | 0 | 读账号 + `explore-safety` | 登录参数（内存） |
-| 1 | `dump-ddl`（缺表才跑，禁 `--all`） | `assets/ddl/<ds>/` |
-| 2 | `explore-sut` | `artifacts/evidence/<run_id>/` + `assets/explore/` |
+| 1 | `dump-ddl`（缺表才跑，禁 `--all`） | `knowledge/ddl/<ds>/` |
+| 2 | `explore-sut` | `artifacts/evidence/<run_id>/` + `knowledge/wiki/explore/` |
 | 3 | `analyze-mcp-network`（`tuner-evidence routes`） | 路由表 JSON |
 | 4 | `reuse-analysis` | 复用 vs 新建 |
 | 5 | `freeze-api-objects` | `packages/api_objects/`（跳过 sign-in） |
 | 6 | `maintain-page-objects` | `packages/page_objects/` |
-| 7 | `derive-design-knowledge`；有源码则 **`sut-source-to-design`** | `assets/design/` |
-| 8 | `maintain-index` | `INDEX.project.md` 或 `INDEX.md` |
+| 7 | `derive-design-knowledge`；有源码则 **`sut-source-to-design`** | `knowledge/wiki/design/` |
+| 8 | `maintain-index` | `INDEX.project.md` |
 | 9 | **本 agent** 写 inbox | `artifacts/inbox/<utc>-sut-self-learning-<slice>.md` |
 | 10 | 仅当用户要 `.feature` | `derive-feature-sets` → **`bdd-asset-pipeline`** |
 

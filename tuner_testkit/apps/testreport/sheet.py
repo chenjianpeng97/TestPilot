@@ -257,7 +257,7 @@ def _parse_case_rows(table: mdparse.Table, sheet_dir: Path, name: str, issues: l
     out: list[CaseRow] = []
     group = table.headings.get(2, "")
     subgroup = table.headings.get(3, "")
-    for record, line in zip(table.records(), table.row_lines):
+    for record, line in zip(table.records(), table.row_lines, strict=True):
         cell = record.get("用例", "")
         link = _case_link(cell)
         if link is None:
@@ -299,7 +299,7 @@ def _parse_defects(table: mdparse.Table, name: str, issues: list[Issue]) -> list
         issues.append(Issue("error", "defect_columns_missing", name, "缺陷表缺列：" + "、".join(missing), table.line))
     out: list[DefectRow] = []
     seen: set[str] = set()
-    for record, line in zip(table.records(), table.row_lines):
+    for record, line in zip(table.records(), table.row_lines, strict=True):
         defect_id = record.get("编号", "").strip()
         others = [v for k, v in record.items() if k != "编号" and v.strip()]
         if defect_id in ("", "无") and not others:

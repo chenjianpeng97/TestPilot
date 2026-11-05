@@ -444,7 +444,7 @@ def probe_locator(locator: Any, *, policy: LocatorPolicy) -> bool:
     state = "visible" if policy.require_visible else "attached"
     try:
         locator.first.wait_for(state=state, timeout=policy.probe_timeout_ms)
-    except Exception:
+    except Exception:  # noqa: BLE001 -- any probe failure means this candidate is unusable
         return False
     return True
 

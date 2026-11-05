@@ -111,7 +111,11 @@ def cmd_draft(args: argparse.Namespace) -> int:
             _envelope("failed", [{"kind": "issues", "errors": data["errors"], "warnings": data["warnings"]}], [])
         return 1
 
-    profile_path = _resolve(root, args.profile or f"assets/domain-notes/testreport/{args.sut}.md")
+    default_profile = f"assets/testreport/profiles/{args.sut}.md"
+    legacy_profile = f"assets/domain-notes/testreport/{args.sut}.md"
+    if not args.profile and not _resolve(root, default_profile).is_file() and _resolve(root, legacy_profile).is_file():
+        default_profile = legacy_profile  # pre-7.0 workspace, before `tuner-workspace migrate knowledge`
+    profile_path = _resolve(root, args.profile or default_profile)
     profile = load_profile(profile_path)
     if profile.path is None or not profile_path.is_file():
         _emit(f"profile missing path={_rel(root, profile_path)}")
@@ -217,7 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_draft.add_argument("sheets", nargs="+", help="assets/testsheet/<轮次> 目录")
     p_draft.add_argument("--sut", required=True, help="被测系统短名；也决定画像与报告路径")
     p_draft.add_argument("--slug", required=True, help="报告 id（ASCII，例 260101-login）")
-    p_draft.add_argument("--profile", default="", help="画像路径，默认 assets/domain-notes/testreport/<sut>.md")
+    p_draft.add_argument("--profile", default="", help="画像路径，默认 assets/testreport/profiles/<sut>.md")
     p_draft.add_argument("--env", default="", help="front-matter env")
     p_draft.add_argument("--task", default="", help="front-matter task_id")
     p_draft.add_argument("--out", default="", help="默认 assets/testreport/<sut>/<yyyy-mm>/<slug>.md")

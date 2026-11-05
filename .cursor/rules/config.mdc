@@ -1,0 +1,24 @@
+---
+description: config/ answers "where and through which channel" (SUT env, OPS, PORTS, CHANNELS, KNOWLEDGE); read it via tuner-config show --json, change it via maintain-config, never commit secrets
+globs: config/**
+alwaysApply: false
+version: 1.0.0
+---
+
+# config — 配置边界
+
+规范见 `docs/spec/config-syntax.md`；schema 实现在 `tuner_testkit/config_schema.py`。
+
+## 必须
+
+- 读配置只用 `tuner-config show --json`（密钥打码）。不要直接读 `config/env_local.py` 把内容复述进对话。
+- 改配置走 skill `maintain-config`；改完跑 `tuner-config validate`，有 error 就修。
+- 分类放对位置：被测系统环境与 `OPS` 写在 `env_local.ENVIRONMENTS.<name>`；`CHANNELS`、`PORTS`、`KNOWLEDGE.api_docs` 写在 `env.py`（团队约定，入库）；
+  `KNOWLEDGE.source_roots` 与本机通道覆盖写在 `env_local.py` 顶层。
+- `PORTS` 只指向 workspace `apps.<name>`，且该 app 的 `tool.py` 声明了同名 `port`（`docs/spec/ports.md`）。
+
+## 禁止
+
+- 在 `env.py` / `env_overlay.py` 写真实密码、令牌；暂存 `env_local.py`、`.active_env`、`data/*.local.yaml`。
+- 在任务、提问、changelog、wiki、提交信息里写密钥原文。
+- 在人回答通道问题前（`tuner-task ask` 未答）往 `PORTS` / `OPS` 填猜测的通道。

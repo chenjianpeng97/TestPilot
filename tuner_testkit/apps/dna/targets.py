@@ -17,15 +17,38 @@ translated: hook schemas differ between tools.
 """
 from __future__ import annotations
 
+import hashlib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from tuner_testkit.apps.dna.paths import PLATFORM_ONLY_BEGIN, PLATFORM_ONLY_END, is_local_override
 from tuner_testkit.apps.dna.source import iter_dna_files
 
 FileMap = dict[str, bytes]
 _FM_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.S)
+_TEXT_SUFFIXES = (".md", ".mdc")
+_PLATFORM_BLOCK_RE = re.compile(
+    r"[ \t]*" + re.escape(PLATFORM_ONLY_BEGIN) + r".*?" + re.escape(PLATFORM_ONLY_END) + r"[ \t]*\r?\n?",
+    re.S,
+)
+
+
+def strip_platform_only(text: str) -> str:
+    """Drop ``<!-- platform-only:begin -->…<!-- platform-only:end -->`` blocks."""
+    if PLATFORM_ONLY_BEGIN not in text:
+        return text
+    return _PLATFORM_BLOCK_RE.sub("", text)
+
+
+def _workspace_bytes(rel: str, path: Path) -> bytes:
+    data = path.read_bytes()
+    if not rel.endswith(_TEXT_SUFFIXES):
+        return data
+    text = data.decode("utf-8")
+    stripped = strip_platform_only(text)
+    return data if stripped == text else stripped.encode("utf-8")
 
 
 @dataclass(frozen=True)
@@ -71,14 +94,15 @@ def render_target(source: Path, target: str) -> FileMap:
     layout = TARGET_LAYOUTS[target]
     files = iter_dna_files(source)
     if target == "cursor":
-        return {rel: path.read_bytes() for rel, path in files}
+        return {rel: _workspace_bytes(rel, path) for rel, path in files}
     out: FileMap = {}
     for rel, path in files:
         parts = rel.split("/")
         if layout.skills_dir and parts[:2] == [".cursor", "skills"] and len(parts) >= 4:
-            out["/".join([layout.skills_dir, *parts[2:]])] = path.read_bytes()
+            out["/".join([layout.skills_dir, *parts[2:]])] = _workspace_bytes(rel, path)
         elif layout.agents_dir and parts[:2] == [".cursor", "agents"] and len(parts) == 3:
-            out["/".join([layout.agents_dir, parts[2]])] = _strip_cursor_only_fields(path.read_text(encoding="utf-8")).encode("utf-8")
+            text = strip_platform_only(path.read_text(encoding="utf-8"))
+            out["/".join([layout.agents_dir, parts[2]])] = _strip_cursor_only_fields(text).encode("utf-8")
     if layout.instructions_file:
         out[layout.instructions_file] = render_instructions(source, layout).encode("utf-8")
     return out
@@ -103,7 +127,9 @@ def render_instructions(source: Path, layout: TargetLayout) -> str:
     always: list[tuple[str, str, str]] = []
     scoped: list[tuple[str, str, str]] = []
     for path in sorted(rules_dir.glob("*.mdc")) if rules_dir.is_dir() else []:
-        text = path.read_text(encoding="utf-8")
+        if is_local_override(path.name):
+            continue
+        text = strip_platform_only(path.read_text(encoding="utf-8"))
         meta = _front_matter(text)
         body = _FM_RE.sub("", text, count=1).strip()
         entry = (path.stem, meta.get("description", ""), body if meta.get("alwaysapply") == "true" else meta.get("globs", ""))
@@ -114,8 +140,8 @@ def render_instructions(source: Path, layout: TargetLayout) -> str:
         "",
         "@AGENTS.md",
         "",
-        "The repository's stable world-view is `AGENTS.md`; the capability map is `INDEX.md`",
-        "(and `INDEX.project.md` in a workspace). Skills live under "
+        "The repository's stable world-view is `AGENTS.md` (plus `AGENTS.local.md` when present);",
+        "the asset map is `INDEX.project.md`. Skills live under "
         f"`{layout.skills_dir or '.cursor/skills'}/<name>/SKILL.md`; read a skill before following it.",
         "",
         "## Always-on rules",
@@ -151,23 +177,147 @@ def _front_matter(text: str) -> dict[str, str]:
     return out
 
 
-def write_file_map(dest: Path, files: FileMap, *, overwrite: bool, log: Callable[[str], None] = print) -> tuple[int, int]:
-    copied = skipped = 0
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+@dataclass
+class SyncResult:
+    added: list[str] = field(default_factory=list)
+    updated: list[str] = field(default_factory=list)
+    overwritten: list[str] = field(default_factory=list)
+    kept_local: list[str] = field(default_factory=list)
+    unchanged: int = 0
+    pruned: list[str] = field(default_factory=list)
+    prune_kept: list[str] = field(default_factory=list)
+    written: dict[str, str] = field(default_factory=dict)
+
+    def summary(self) -> str:
+        return (
+            f"added={len(self.added)} updated={len(self.updated)} overwritten={len(self.overwritten)} "
+            f"kept_local={len(self.kept_local)} unchanged={self.unchanged} "
+            f"pruned={len(self.pruned)} prune_kept={len(self.prune_kept)}"
+        )
+
+
+def sync_file_map(
+    dest: Path,
+    files: FileMap,
+    *,
+    overwrite: bool,
+    recorded: dict[str, str] | None = None,
+    prune: bool = False,
+    log: Callable[[str], None] = print,
+) -> SyncResult:
+    """Write ``files`` into ``dest``.
+
+    ``recorded`` maps each path written by the previous sync to its hash. A file
+    whose current hash still equals the recorded one was not edited locally, so
+    it is refreshed without ``--overwrite``. Locally edited files are kept unless
+    ``overwrite`` is set. With ``prune``, files written by the previous sync that
+    the kit no longer ships are deleted when untouched, kept when edited.
+    Local-override files (``*.local.*``, ``AGENTS.local.md``) are never touched.
+    """
+    recorded = recorded or {}
+    result = SyncResult()
     for rel, data in sorted(files.items()):
+        if is_local_override(rel):
+            continue
         dst = dest / rel
-        if dst.exists():
-            if dst.is_file() and dst.read_bytes() == data:
-                skipped += 1
+        digest = sha256(data)
+        if dst.is_file():
+            current = dst.read_bytes()
+            if current == data:
+                result.unchanged += 1
+                result.written[rel] = digest
                 continue
-            if not overwrite:
-                skipped += 1
-                log(f"skip {rel} (differs; pass --overwrite)")
+            untouched = recorded.get(rel) == sha256(current)
+            if not untouched and not overwrite:
+                result.kept_local.append(rel)
+                if rel in recorded:
+                    result.written[rel] = recorded[rel]
+                log(f"keep {rel} (edited locally; move edits to a *.local.* file, or pass --overwrite)")
                 continue
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_bytes(data)
-        copied += 1
-        log(f"copy {rel}")
-    return copied, skipped
+            dst.write_bytes(data)
+            (result.updated if untouched else result.overwritten).append(rel)
+            log(f"{'update' if untouched else 'overwrite'} {rel}")
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_bytes(data)
+            result.added.append(rel)
+            log(f"add {rel}")
+        result.written[rel] = digest
+    if prune:
+        for rel, old_digest in sorted(recorded.items()):
+            if rel in files or is_local_override(rel):
+                continue
+            dst = dest / rel
+            if not dst.is_file():
+                continue
+            if sha256(dst.read_bytes()) == old_digest:
+                dst.unlink()
+                _remove_empty_parents(dst.parent, dest)
+                result.pruned.append(rel)
+                log(f"prune {rel}")
+            else:
+                result.prune_kept.append(rel)
+                result.written[rel] = old_digest
+                log(f"keep {rel} (no longer shipped, but edited locally)")
+    return result
+
+
+def _remove_empty_parents(folder: Path, stop: Path) -> None:
+    stop = stop.resolve()
+    current = folder.resolve()
+    while current != stop and stop in current.parents:
+        try:
+            current.rmdir()
+        except OSError:
+            return
+        current = current.parent
+
+
+def write_file_map(dest: Path, files: FileMap, *, overwrite: bool, log: Callable[[str], None] = print) -> tuple[int, int]:
+    """Back-compat wrapper: returns (written, skipped)."""
+    result = sync_file_map(dest, files, overwrite=overwrite, log=log)
+    written = len(result.added) + len(result.updated) + len(result.overwritten)
+    return written, result.unchanged + len(result.kept_local)
+
+
+@dataclass
+class Drift:
+    missing: list[str] = field(default_factory=list)
+    outdated: list[str] = field(default_factory=list)
+    edited: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
+
+    @property
+    def any(self) -> bool:
+        return bool(self.missing or self.outdated or self.edited or self.removed)
+
+
+def drift_file_map(dest: Path, files: FileMap, recorded: dict[str, str] | None = None) -> Drift:
+    """Classify differences: missing, outdated (untouched since last sync), edited locally, removed upstream."""
+    recorded = recorded or {}
+    drift = Drift()
+    for rel, data in sorted(files.items()):
+        if is_local_override(rel):
+            continue
+        dst = dest / rel
+        if not dst.is_file():
+            drift.missing.append(rel)
+            continue
+        current = dst.read_bytes()
+        if current == data:
+            continue
+        if recorded.get(rel) == sha256(current):
+            drift.outdated.append(rel)
+        else:
+            drift.edited.append(rel)
+    for rel in sorted(recorded):
+        if rel not in files and (dest / rel).is_file() and not is_local_override(rel):
+            drift.removed.append(rel)
+    return drift
 
 
 def diff_file_map(dest: Path, files: FileMap) -> tuple[list[str], list[str]]:

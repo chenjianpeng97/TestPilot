@@ -1,22 +1,28 @@
 ---
-description: Every agent run must leave a task log under artifacts/inbox/ (no secrets).
+description: Orchestrated agent runs (.cursor/agents/*) leave a local task log under artifacts/inbox/; skills leave their trail in the maintained object's committed changelog instead (no secrets in either).
 alwaysApply: true
-version: 1.0.0
+version: 2.0.0
 ---
 
-# Agent task log — `artifacts/inbox/`
+# Agent task log 与对象 changelog
 
-每次按 `.cursor/agents/*.md` 编排执行（含 SUT 自学习），结束前必须写一份任务记录。
-细则见 `docs/spec/agent-task-log.md`。
+两种记录，分工固定。细则见 `docs/spec/agent-task-log.md` 与 `docs/spec/metadata-conventions.md` §4。
 
 ## Must
 
-- 路径：`artifacts/inbox/<UTC>-<agent>-<slice>.md`（例 `20260914T031200Z-sut-self-learning-cycles.md`）。
-- 必填：`agent`、意图、输入、产出文件列表、下一步。
-- **SUT 自学习**额外必填：本次探索的页面（url pattern + 标题）、本次新增/更新的测试资产路径。
-- 只写 `account_id` / workspace slug，**禁止**密码、token、Cookie。
+- **按 `.cursor/agents/*.md` 编排执行**（`sut-self-learning`、`bdd-asset-pipeline`、`sut-source-to-design`）结束前写一份本机任务记录：
+  - 路径：`artifacts/inbox/<UTC>-<agent>-<slice>.md`（例 `20260914T031200Z-sut-self-learning-cycles.md`），gitignore。
+  - 必填：`agent`、意图、输入、产出文件列表、下一步。
+  - **SUT 自学习**额外必填：本次探索的页面（url pattern + 标题）、本次新增/更新的测试资产路径。
+- **skill 维护一个库**（`maintain-testcases`、`maintain-testsheet`、`execute-testsheet`、`maintain-wiki`、`maintain-defectlib`、
+  `derive-test-design`、`freeze-api-objects`、`maintain-page-objects`、`create-action-word` 等）不写 inbox，而是：
+  - 改动的单元 bump front-matter `version`；
+  - `tuner-workspace changelog append --area <库> --skill <skill> --action … --items … [--version x->y] --reason …`；
+  - changelog 和改动在同一个提交里入库。
+- 两种记录都只写 `account_id` / workspace slug，**禁止**密码、token、Cookie。
 
 ## Must not
 
-- 用聊天摘要代替 inbox 落盘。
-- 把 inbox 当 evidence（网络 dump 仍走 `artifacts/evidence/<run_id>/`）。
+- 用聊天摘要代替落盘。
+- 把 inbox 当 evidence（网络 dump 仍走 `artifacts/evidence/<run_id>/`），或当追溯依据（它不入库）。
+- 手编 changelog 行格式；用 `tuner-workspace changelog append`。

@@ -9,7 +9,9 @@ The active name is resolved (first hit wins) from:
 4. the sole key, if ``ENVIRONMENTS`` has exactly one entry
 
 ``python -m tuner_testkit.config show`` / ``use <name>`` (or ``tuner-config``)
-switches the pointer. Callers still read the merged view on ``config.env``;
+switches the pointer; ``show --json`` prints the masked merged view and
+``validate`` checks it (schema in ``tuner_testkit.config_schema``,
+``docs/spec/config-syntax.md``). Callers still read the merged view on ``config.env``;
 this module must not import ``config.env`` at module level (``config.env``
 calls into here while it is still loading).
 """
@@ -131,22 +133,17 @@ def _merge_databases_into(target_db: dict[str, Any], overlay: Mapping[str, Any])
 
 
 def apply_profile(target: Any, profile: Mapping[str, Any]) -> None:
-    extra = profile.get("DATABASES")
-    if isinstance(extra, dict):
-        databases = getattr(target, "DATABASES", None)
-        if not isinstance(databases, dict):
-            target.DATABASES = {}
-            databases = target.DATABASES
-        _merge_databases_into(databases, extra)
-    url = profile.get("TEST_BASE_URL")
-    if url:
-        target.TEST_BASE_URL = str(url)
-    ui_url = profile.get("TEST_UI_BASE_URL")
-    if ui_url:
-        target.TEST_UI_BASE_URL = str(ui_url)
-    account = profile.get("TEST_ACCOUNT")
-    if account:
-        target.TEST_ACCOUNT = account
+    """Merge one environment profile (any section of ``config_schema.ALL_SECTIONS``) onto ``target``."""
+    from tuner_testkit.config_schema import apply_sections
+
+    apply_sections(target, profile)
+
+
+def apply_module(target: Any, mod: Any) -> None:
+    """Merge a flat overlay module (``env_overlay.py`` / flat ``env_local.py``) onto ``target``."""
+    from tuner_testkit.config_schema import apply_sections, module_sections
+
+    apply_sections(target, module_sections(mod))
 
 
 def apply_selected_environment(
@@ -180,6 +177,10 @@ def apply_selected_environment(
     profile = envs[name]
     if not isinstance(profile, dict):
         raise EnvProfileError(f"环境 {name!r} 必须是 dict，实际为 {type(profile).__name__}")
+    from tuner_testkit.config_schema import WORKSPACE_SECTIONS, apply_sections, module_sections
+
+    # Machine-level CHANNELS / PORTS / KNOWLEDGE at the top of env_local apply to every environment.
+    apply_sections(target, module_sections(source), sections=WORKSPACE_SECTIONS)
     apply_profile(target, profile)
     target.ACTIVE_ENV = name
     return name
@@ -236,14 +237,38 @@ def get_ui_base_url() -> str:
 
 def _print_profile_summary(name: str, profile: Mapping[str, Any]) -> None:
     url = profile.get("TEST_BASE_URL") or ""
+    ui_url = profile.get("TEST_UI_BASE_URL") or ""
     databases = profile.get("DATABASES") if isinstance(profile.get("DATABASES"), dict) else {}
     aliases = ", ".join(sorted(str(k) for k in databases)) or "(none)"
     print(f"active: {name}")
+    print(f"TEST_UI_BASE_URL: {ui_url or '(same as TEST_BASE_URL)'}")
     print(f"TEST_BASE_URL: {url}")
     print(f"DATABASES aliases: {aliases}")
 
 
-def _cmd_show(_args: argparse.Namespace) -> int:
+def describe_project_config() -> dict[str, Any]:
+    """Masked view of the merged project config (see ``config_schema.describe``)."""
+    from tuner_testkit.config_schema import describe
+
+    local = load_env_local()
+    envs = environments_of(local) if local is not None else None
+    mode = "none" if local is None else ("environments" if envs else "flat")
+    try:
+        env = load_project_env()
+    except EnvProfileError as exc:
+        return {"mode": mode, "env_local": local is not None, "error": str(exc), "available": sorted(envs or [])}
+    payload = describe(env, available=list(envs or []), mode=mode, env_local=local is not None)
+    payload["root"] = str(repo_root())
+    return payload
+
+
+def _cmd_show(args: argparse.Namespace) -> int:
+    if getattr(args, "json", False):
+        import json
+
+        payload = describe_project_config()
+        sys.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
+        return 1 if payload.get("error") else 0
     local = load_env_local()
     if local is None:
         print(
@@ -279,6 +304,90 @@ def _cmd_show(_args: argparse.Namespace) -> int:
     profile = envs[active] if isinstance(envs[active], dict) else {}
     _print_profile_summary(active, profile)
     return 0
+
+
+def validate_project_config(root: Path | None = None) -> dict[str, Any]:
+    """Deterministic config checks; ``ok`` is False when any finding is an error."""
+    import subprocess
+
+    from tuner_testkit.config_schema import Finding, committed_secret_literals, find_placeholders, validate_sections
+
+    base = root or repo_root()
+    findings: list[Finding] = []
+    local_path = base / "config" / "env_local.py"
+    if not local_path.is_file():
+        findings.append(
+            Finding("warn", "env_local.missing", "没有 config/env_local.py（本机密钥与真实地址）", "maintain-config")
+        )
+    else:
+        try:
+            tracked = subprocess.run(
+                ["git", "ls-files", "--error-unmatch", "config/env_local.py"],
+                cwd=str(base),
+                capture_output=True,
+                timeout=10,
+                check=False,
+            ).returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            tracked = False
+        if tracked:
+            findings.append(
+                Finding("error", "env_local.tracked", "config/env_local.py 被 git 跟踪；立刻 git rm --cached 并确认 .gitignore", "")
+            )
+    for name in ("env.py", "env_overlay.py"):
+        path = base / "config" / name
+        if path.is_file():
+            for hit in committed_secret_literals(path):
+                findings.append(
+                    Finding("error", "committed.secret", f"提交的配置里有疑似密钥：{hit}", "移到 config/env_local.py")
+                )
+    try:
+        env = load_project_env()
+    except EnvProfileError as exc:
+        findings.append(Finding("error", "env.active", str(exc), "tuner-config use <name>"))
+        env = None
+    if env is not None:
+        try:
+            from tuner_testkit.tools import export_tools
+
+            tools = export_tools(base, include_kit=False)
+        except Exception as exc:  # noqa: BLE001 -- a broken app must not hide config findings
+            findings.append(Finding("warn", "tools.discover", f"apps/*/tool.py 导入失败：{type(exc).__name__}: {exc}", ""))
+            tools = None
+        findings.extend(validate_sections(env, root=base, tools=tools))
+        if not str(getattr(env, "TEST_BASE_URL", "") or "").strip():
+            findings.append(Finding("warn", "env.api_url", "TEST_BASE_URL 为空", "maintain-config"))
+        if not str(getattr(env, "TEST_UI_BASE_URL", "") or "").strip():
+            findings.append(Finding("info", "env.ui_url", "TEST_UI_BASE_URL 为空，UI 沿用 TEST_BASE_URL", "maintain-config"))
+        active_profile = {
+            "DATABASES": getattr(env, "DATABASES", None) or {},
+            "TEST_ACCOUNT": getattr(env, "TEST_ACCOUNT", None) or {},
+            "OPS": getattr(env, "OPS", None) or {},
+        }
+        for dotted in find_placeholders(active_profile):
+            findings.append(Finding("warn", "env.placeholder", f"仍是模板占位：{dotted}", "maintain-config"))
+    rows = [f.to_dict() for f in findings]
+    return {
+        "root": str(base),
+        "ok": not any(f.severity == "error" for f in findings),
+        "errors": sum(1 for f in findings if f.severity == "error"),
+        "warnings": sum(1 for f in findings if f.severity == "warn"),
+        "findings": rows,
+    }
+
+
+def _cmd_validate(args: argparse.Namespace) -> int:
+    import json
+
+    result = validate_project_config()
+    if getattr(args, "json", False):
+        sys.stdout.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    else:
+        for row in result["findings"]:
+            fix = f"  -> {row['fix']}" if row["fix"] else ""
+            print(f"[{row['severity']}] {row['code']}: {row['message']}{fix}")
+        print(f"errors={result['errors']} warnings={result['warnings']}")
+    return 0 if result["ok"] else 1
 
 
 def _cmd_use(args: argparse.Namespace) -> int:
@@ -320,11 +429,18 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd")
 
     p_show = sub.add_parser("show", help="list named environments and the active one")
+    p_show.add_argument(
+        "--json", action="store_true", help="print the merged config (env, URLs, channels, ports, knowledge) with secrets masked"
+    )
     p_show.set_defaults(func=_cmd_show)
 
     p_use = sub.add_parser("use", help="write config/.active_env (repo-global switch)")
     p_use.add_argument("name", help="environment name defined in env_local.ENVIRONMENTS")
     p_use.set_defaults(func=_cmd_use)
+
+    p_validate = sub.add_parser("validate", help="check config schema, placeholders, committed secrets, port bindings")
+    p_validate.add_argument("--json", action="store_true", help="print findings as JSON")
+    p_validate.set_defaults(func=_cmd_validate)
 
     args = parser.parse_args(argv)
     if not args.cmd:

@@ -1,6 +1,6 @@
 ---
 name: metadata-conventions
-version: 1.1.0
+version: 1.2.0
 description: 统一 front-matter / run manifest 字段家族，供 catalog、工作台与未来企业平台解析「谁在何时创建了什么」。
 ---
 
@@ -13,7 +13,7 @@ description: 统一 front-matter / run manifest 字段家族，供 catalog、工
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
-| `kind` | string | `app` / `action_word` / `testreport` / `inbox` / `question` / `task` / `testdesign` / `testcase` / `testcase-suite` / `testcase-module` / `testcase-index` / `explore` / `design` / `usecase` / `domain-note` |
+| `kind` | string | `app` / `action_word` / `testreport` / `inbox` / `question` / `task` / `testdesign` / `testcase` / `testcase-suite` / `testcase-module` / `testcase-index` / `explore` / `design` / `usecase` / `domain-note` / `wiki-page` / `wiki-index` / `requirement` / `defect` |
 | `id` | string | 稳定标识（`tool_id` / `word_id` / 报告 slug） |
 | `title` | string | 短标题 |
 | `author` | email | 创建者，来自 `git config user.email` |
@@ -57,6 +57,8 @@ catalog 同时用 `git log --diff-filter=A --format=%ae -- <path>` 算首次提�
 - `kind: question` 未回答落在 `artifacts/inbox/questions/Q-*.md`，回答后移到 `artifacts/inbox/archived-question/`（不入库）。
 - `kind: testdesign` 落在 `assets/testdesign/<sut>/<slug>.md`，字段见 `docs/spec/test-design-syntax.md`。
 - `kind: testcase` 落在 `assets/testcases/<模块>/<套件>/<用例ID>.md`；套件说明是 `testcase-suite`，模块说明是 `testcase-module`，总索引是 `testcase-index`。字段见 `docs/spec/testcase-syntax.md`。
+- `kind: requirement` 落在 `knowledge/requirements/<REQ-ID>.md`，wiki 页落在 `knowledge/wiki/**`，字段见 `docs/spec/knowledge-syntax.md`。
+- `kind: defect` 落在 `knowledge/defects/<DEF-ID>.md`，字段、章节与历史表见 `docs/spec/defect-syntax.md`。
 
 ### run manifest
 
@@ -69,3 +71,39 @@ catalog 同时用 `git log --diff-filter=A --format=%ae -- <path>` 算首次提�
 | --- | --- |
 | 新建 app / 报告 / usecase | skill 落盘后立刻 `tuner-workspace meta stamp <path> --kind …` |
 | 批量补作者 | 对缺 `author` 的 Markdown 再 stamp 一次（不覆盖已有 `created`） |
+| 维护一个库后留痕 | `tuner-workspace changelog append --area <库> …`（§4） |
+
+## 4. 对象级 changelog（追溯）
+
+`artifacts/inbox/` 是本机会话流水，不入库。追溯靠被维护对象自己的记录，和改动在同一个提交里入库：
+
+1. **单元版本**：用例、需求、缺陷、wiki 页、测试设计等带 front-matter 的单元，内容一改就 bump `version`
+   （修正错字 patch，补充步骤或预期 minor，改变语义 major）。新文件从 `1.0.0` 起。
+2. **库 changelog**：每次维护在库根追加一行，命令写，不手编：
+
+   ```bash
+   tuner-workspace changelog append --area testcases --skill maintain-testcases \
+     --action 更新 --items Order-Refund-partial-amount --version 1.0.0->1.1.0 --reason "补充库存回填的预期"
+   ```
+
+   行格式：`- <iso-ts> | <skill> | <action> | items=<id,…> | version=<x->y> | reason=<一句话> | author=<email>`。
+   `author` 默认取 `git config user.email`；`reason` 不写密钥。
+
+| 库（`--area`） | 目录 | changelog | 维护者 |
+| --- | --- | --- | --- |
+| `testcases` | `assets/testcases/` | `assets/testcases/CHANGELOG.md` | `maintain-testcases` |
+| `testsheet` | `assets/testsheet/` | `assets/testsheet/CHANGELOG.md` | `maintain-testsheet`、`execute-testsheet` |
+| `testdesign` | `assets/testdesign/` | `assets/testdesign/CHANGELOG.md` | `derive-test-design` |
+| `requirements` | `knowledge/requirements/` | `knowledge/requirements/CHANGELOG.md` | `maintain-wiki` |
+| `defects` | `knowledge/defects/` | `knowledge/defects/CHANGELOG.md` | `maintain-defectlib` |
+| `wiki` | `knowledge/wiki/` | `knowledge/wiki/log.md` | `maintain-wiki` |
+| `ddl` | `knowledge/ddl/` | `knowledge/ddl/CHANGELOG.md` | `tuner-dump-ddl`（工具自动写） |
+| `api_objects` | `packages/api_objects/` | `packages/api_objects/CHANGELOG.md` | 录制工具自动写；手改走 `freeze-api-objects` |
+| `page_objects` | `packages/page_objects/` | `packages/page_objects/CHANGELOG.md` | 录制工具自动写；手改走 `maintain-page-objects` |
+| `action_words` | `packages/action_words/` | `packages/action_words/CHANGELOG.md` | `create-action-word` |
+
+3. **校验**：`tuner-workspace changelog check --staged`（pre-commit 自动跑；CI 用 `--base <ref>`）。
+   维护区有改动却没有 changelog 行 → 失败；改了带 `version` 的单元却没 bump → 失败。
+   基础设施文件（`__init__.py`、`registry.py`、`session.py`、`_internal/` 等）、`index.md` / `README.md` 不算单元。
+   紧急情况单次绕过：`TUNER_SKIP_CHANGELOG_CHECK=1 git commit …`，并在提交正文说明原因。
+4. git 历史仍然有效：一次维护一个提交，提交正文逐条写首次创建或变更原因；changelog 是不依赖 git 工具也能读的摘要。

@@ -89,7 +89,7 @@ def _literal(node: ast.AST) -> Any:
         return tuple(_literal(e) for e in node.elts)
     if isinstance(node, ast.Dict):
         out: dict[str, Any] = {}
-        for k, v in zip(node.keys, node.values):
+        for k, v in zip(node.keys, node.values, strict=True):
             if k is None:
                 continue
             out[str(_literal(k))] = _literal(v)

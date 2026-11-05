@@ -1,7 +1,8 @@
 ---
 name: derive-feature-sets
 version: 1.0.0
-description: Turn assets/explore capability notes (plus usecases/domain-notes) into behave Feature Sets under tests/features/. Use after explore-sut, before bdd-asset-pipeline. Do NOT use when the user explicitly requests pytest.
+group: internal
+description: Internal step (usually reached via maintain-bdd-assets). Turn knowledge/wiki/explore capability notes (plus usecases/domain-notes) into behave Feature Sets under tests/features/. Use after explore-sut, before bdd-asset-pipeline. Do NOT use when the user explicitly requests pytest.
 ---
 
 # Derive Feature Sets
@@ -10,7 +11,7 @@ description: Turn assets/explore capability notes (plus usecases/domain-notes) i
 
 - **Primary goal**: write Gherkin that expresses the explored capability, not the click path.
 - **Write scope**: `tests/features/**/*.feature` via `feature-authoring` rules.
-- **Inputs**: `assets/explore/**`, optional `assets/usecases/**`, `assets/design/**` (so Then clauses stay honest).
+- **Inputs**: `knowledge/wiki/explore/**`, optional `knowledge/wiki/usecases/**`, `knowledge/wiki/design/**` (so Then clauses stay honest).
 
 ## Steps
 

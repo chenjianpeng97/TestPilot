@@ -1,7 +1,8 @@
 ---
 name: analyze-mcp-network
 version: 1.0.0
-description: Turn a persisted artifacts/evidence/<run_id>/network.jsonl into a unique method+path route table (JSON) for freeze-api-objects. Prefer tuner-evidence routes (deterministic). Use after explore-sut or run-feature-playwright-mcp. Do not invent routes that are not in the JSONL.
+group: internal
+description: Internal step (usually reached via sut-self-learning / freeze-api-objects). Turn a persisted artifacts/evidence/<run_id>/network.jsonl into a unique method+path route table (JSON) for freeze-api-objects. Prefer tuner-evidence routes (deterministic). Use after explore-sut or run-feature-playwright-mcp. Do not invent routes that are not in the JSONL.
 ---
 
 # Analyze MCP network evidence

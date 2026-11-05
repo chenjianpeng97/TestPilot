@@ -25,23 +25,31 @@ _SKIP_API_OBJECT_FILES = {"__init__.py", "conftest.py", "auth.py", "registry.py"
 _SKIP_API_OBJECT_DIRS = {"recording", "tests"}
 _SKIP_PAGE_OBJECT_FILES = {"__init__.py", "conftest.py", "session.py", "pages.py"}
 ASSET_CATEGORIES: tuple[str, ...] = (
-    "ddl",
     "sql",
-    "usecases",
-    "domain-notes",
-    "explore",
-    "design",
     "testdesign",
     "testcases",
+    "testsheet",
     "testreport",
 )
+WIKI_CATEGORIES: tuple[str, ...] = ("domain-notes", "usecases", "explore", "design")
+KNOWLEDGE_CATEGORIES: tuple[str, ...] = ("raw", "wiki", "requirements", "defects")
+# Pre-7.0 workspaces kept these under assets/ (``tuner-workspace migrate knowledge``).
+LEGACY_KNOWLEDGE_IN_ASSETS: tuple[str, ...] = ("ddl", *WIKI_CATEGORIES)
+_SKIP_KNOWLEDGE_NAMES = {"CHANGELOG.MD", "LOG.MD", "INDEX.MD", "README.MD"}
 
 
 # ---------------------------------------------------------------------------
 # Knowledge layer
 # ---------------------------------------------------------------------------
+def ddl_root(root: Path) -> Path:
+    """``knowledge/ddl``, or the legacy ``assets/ddl`` while a workspace is unmigrated."""
+    current = root / "knowledge" / "ddl"
+    legacy = root / "assets" / "ddl"
+    return legacy if not current.is_dir() and legacy.is_dir() else current
+
+
 def scan_ddl(root: Path) -> list[dict[str, Any]]:
-    ddl_dir = root / "assets" / "ddl"
+    ddl_dir = ddl_root(root)
     ddl: list[dict[str, Any]] = []
     if not ddl_dir.is_dir():
         return ddl
@@ -72,36 +80,61 @@ def scan_sql_files(root: Path) -> list[dict[str, str]]:
 
 
 def scan_assets(root: Path) -> list[dict[str, Any]]:
-    """Every Markdown/SQL knowledge file under ``assets/`` with its front-matter."""
-    base = root / "assets"
+    """Markdown/SQL files of the knowledge layer (``knowledge/``) and the asset layer (``assets/``).
+
+    Each row carries ``layer`` (``knowledge`` / ``assets``) and ``category``
+    (``domain-notes`` / ``usecases`` / ``explore`` / ``design`` / ``wiki`` / ``raw`` /
+    ``requirements`` / ``defects`` / ``testcases`` / …). DDL tables are listed by
+    :func:`scan_ddl`; changelogs and index pages are skipped.
+    """
     rows: list[dict[str, Any]] = []
-    if not base.is_dir():
-        return rows
+    knowledge = root / "knowledge"
+    for path in _iter_files(knowledge):
+        if path.suffix.lower() not in {".md", ".sql"} or path.name.upper() in _SKIP_KNOWLEDGE_NAMES:
+            continue
+        parts = path.relative_to(knowledge).parts
+        if parts[0] == "ddl":
+            continue
+        if parts[0] == "wiki" and len(parts) > 2 and parts[1] in WIKI_CATEGORIES:
+            category = parts[1]
+        elif parts[0] in KNOWLEDGE_CATEGORIES:
+            category = parts[0]
+        else:
+            category = "other"
+        rows.append(_knowledge_row(root, path, layer="knowledge", category=category))
+    base = root / "assets"
     for path in _iter_files(base):
         if path.suffix.lower() not in {".md", ".sql"} or path.name.upper() == "CHANGELOG.MD":
             continue
-        rel_parts = path.relative_to(base).parts
-        category = rel_parts[0] if rel_parts[0] in ASSET_CATEGORIES else "other"
-        if category == "ddl":
+        top = path.relative_to(base).parts[0]
+        if top == "ddl":
             continue  # tables are listed by scan_ddl
-        text = _read_text(path)
-        meta = parse_front_matter(text) if path.suffix.lower() == ".md" else _sql_header_meta(text)
-        title_match = H1_RE.search(text) if path.suffix.lower() == ".md" else None
-        rows.append(
-            {
-                "path": _rel(root, path),
-                "category": category,
-                "title": title_match.group(1).strip() if title_match else path.stem,
-                "domain": meta.get("domain"),
-                "source": meta.get("source"),
-                "date": str(meta.get("date")) if meta.get("date") is not None else None,
-                "version": str(meta.get("version")) if meta.get("version") is not None else None,
-                "confidence": meta.get("confidence"),
-                "author": meta.get("author"),
-                "evidence": meta.get("evidence") if isinstance(meta.get("evidence"), list) else [],
-            }
-        )
+        if top in LEGACY_KNOWLEDGE_IN_ASSETS:
+            rows.append(_knowledge_row(root, path, layer="knowledge", category=top))
+            continue
+        rows.append(_knowledge_row(root, path, layer="assets", category=top if top in ASSET_CATEGORIES else "other"))
     return rows
+
+
+def _knowledge_row(root: Path, path: Path, *, layer: str, category: str) -> dict[str, Any]:
+    text = _read_text(path)
+    meta = parse_front_matter(text) if path.suffix.lower() == ".md" else _sql_header_meta(text)
+    title_match = H1_RE.search(text) if path.suffix.lower() == ".md" else None
+    return {
+        "path": _rel(root, path),
+        "layer": layer,
+        "category": category,
+        "id": meta.get("id"),
+        "title": title_match.group(1).strip() if title_match else path.stem,
+        "domain": meta.get("domain"),
+        "source": meta.get("source"),
+        "date": str(meta.get("date")) if meta.get("date") is not None else None,
+        "version": str(meta.get("version")) if meta.get("version") is not None else None,
+        "confidence": meta.get("confidence"),
+        "status": meta.get("status"),
+        "author": meta.get("author"),
+        "evidence": meta.get("evidence") if isinstance(meta.get("evidence"), list) else [],
+    }
 
 
 def _sql_header_meta(text: str) -> dict[str, Any]:

@@ -1,60 +1,59 @@
 ---
 name: maintain-index
-description: Updates the repo-level INDEX.md (knowledge/capability map) incrementally by reading changelog deltas, not full asset bodies. Use after new assets/tools/objects are added, or when INDEX.md drifts from reality.
-version: 1.2.0
+description: Internal step (usually reached via other skills after they change assets). Updates INDEX.project.md (the workspace map of knowledge, assets, tools, ports and tests) incrementally - deterministic auto zones via tuner-workspace index render, manual notes from changelog deltas and front-matter, never full asset bodies. Use after new knowledge/assets/tools/objects are added, or when the index drifts from reality.
+version: 2.0.0
+group: internal
 ---
 
-# Maintain INDEX.md（增量、省 token）
+# Maintain INDEX.project.md（增量、省 token）
 
 ## Scope
 
-- **目标**：保持根 `INDEX.md`（平台能力地图）与仓库真实状态一致；若存在 `INDEX.project.md`，同步保持业务资产地图一致。
-- **规范**：`.cursor/rules/index-hygiene.mdc`、`docs/spec/assets-knowledge-syntax.md`。
-- **写范围**：`INDEX.md`；若 `INDEX.project.md` 存在则也可改它。AI 组件区不手写（见下）。
-- **分流**：平台工具 / 公共 `packages` / AI 组件链接 → `INDEX.md`。业务 DDL / SQL / 用例 / explore / design / api_objects / page_objects / features → 有 `INDEX.project.md` 就写那里，不要把 SUT 明细填进 `INDEX.md`。
+- **目标**：`INDEX.project.md`（业务资产地图）与仓库真实状态一致。
+- **规范**：`.cursor/rules/index-hygiene.mdc`、`docs/spec/knowledge-syntax.md`、`docs/spec/assets-knowledge-syntax.md`。
+- **写范围**：`INDEX.project.md` 围栏外的人工区。AI 组件不手写（`tuner-index-ai` 生成 `.cursor/REGISTRY.md`）。
+<!-- platform-only:begin -->
+- **平台仓**：另有根 `INDEX.md`（平台能力地图）。平台工具（`tuner_testkit/apps/`）、kit 模块、DNA 变化写那里；
+  `dogfood/` 的业务资产写 `dogfood/INDEX.project.md`。
+<!-- platform-only:end -->
 
 ## 先跑确定性渲染，再做人工区
 
-索引文件里被 `<!-- auto:begin:<zone> -->` … `<!-- auto:end:<zone> -->` 围起来的区块**不要手写**：
+被 `<!-- auto:begin:<zone> -->` … `<!-- auto:end:<zone> -->` 围起来的区块**不要手写**：
 
 ```bash
 uv run tuner-workspace catalog          # 刷新 artifacts/catalogs/workspace.json
-uv run tuner-workspace index render     # 渲染 INDEX.project.md（无则 INDEX.md）的 auto 围栏
+uv run tuner-workspace index render     # 渲染 INDEX.project.md 的 auto 围栏
 uv run tuner-workspace index check      # CI：自动区过期则 exit 1
 ```
 
-zone：`ddl` / `sql` / `assets` / `api_objects` / `page_objects` / `action_words` / `apps` / `features`。
-本 skill 只负责围栏**之外**的人工区（用途一句话、confidence 采信说明、平台工具的交接文档链接等）。
+zone：`ddl` / `knowledge` / `sql` / `assets` / `api_objects` / `page_objects` / `action_words` / `apps` / `ports` / `features`。
+pre-7.0 的索引没有 `knowledge` / `ports` 围栏时，`uv run tuner-workspace migrate knowledge --apply` 会补上。
+本 skill 只负责围栏**之外**的人工区（用途一句话、confidence 采信说明）。
 
 ## 核心原则：读 delta，不全量读
 
-- **自动区**（`assets/ddl/`、`packages/api_objects/`、`packages/page_objects/` 等）：**只读各区 `CHANGELOG` 的尾部增量**
-  （`assets/CHANGELOG.md`、`packages/api_objects/CHANGELOG.md`、
-  `packages/page_objects/CHANGELOG.md`），据此补/改 `INDEX.md` 条目。
-  **禁止**为维护索引而逐个打开 `assets/ddl/*.sql` 正文——那是 token 浪费。
-- **人工/半自动区**（`usecases` / `domain-notes` / `explore` / `design` / `sql`）：读新增文件的 **front-matter 元数据头**
-  （domain/source/date/version/confidence）即可登记，不必读全文。
+- **各库 changelog 的尾部增量**（清单见 `docs/spec/metadata-conventions.md` §4：`knowledge/ddl/CHANGELOG.md`、`knowledge/wiki/log.md`、
+  `knowledge/requirements/CHANGELOG.md`、`knowledge/defects/CHANGELOG.md`、`assets/testcases/CHANGELOG.md`、`packages/*/CHANGELOG.md` …），
+  据此判断人工区要补什么。**禁止**为维护索引而逐个打开 `knowledge/ddl/*.sql` 正文。
+- 新增文件只读 **front-matter**（domain / source / version / confidence / status）即可写用途，不必读全文。
+- wiki 页的目录归 `knowledge/wiki/index.md`（`maintain-wiki`），这里不重复列每一页。
 
 ## 步骤
 
-1. 读取各区 `CHANGELOG` 的**新条目**（自上次索引更新之后的行）；若不确定分界，读尾部若干行。
-2. 对照对应索引的现有条目，做最小 diff（有 `INDEX.project.md` 时，第 1 / 2.1 / 2.2 / 业务 tests 小节写进它；第 3 节平台工具仍写 `INDEX.md`）：
-   - DDL → 第 1.1 节（datasource / 表 / 更新时间）。
-   - 业务 SQL → 第 1.2 节（文件 / domain / confidence）。
-   - 用例/讲解/报告/探索/design → 第 1.3 节（读 front-matter 填 domain/source/confidence/用途）。
-   - api_objects / page_objects → 第 2.1 / 2.2 节。
-   - 新工具 → 第 3 节。
-3. **不要**把 `.cursor/**` 组件手写进 `INDEX.md`：运行 `python -m tuner_testkit.apps.index_ai` 重新生成
-   `.cursor/REGISTRY.md`，`INDEX.md` 第 5 节只保留链接。
-4. 只更新变化的小节，保留其余原样。
+1. `index render`，看 `changed` 与 `zones`。
+2. 读各库 changelog 自上次索引更新之后的新行；不确定分界就读尾部若干行。
+3. 对人工区做最小 diff：新知识或新资产写一句用途和采信说明；删除的写明去向。只改变化的小节。
+4. `.cursor/**` 有变化时跑 `uv run tuner-index-ai`。
 
 ## Verify
 
-- `INDEX.md` 中每个新条目都能在仓库找到对应文件/CHANGELOG 行。
-- 未新增全量读取 `.sql` 正文（自查：只依据 CHANGELOG / front-matter 更新）。
+- `uv run tuner-workspace index check` 返回 `up_to_date: true`。
+- 人工区每条都能在仓库找到对应文件或 changelog 行。
+- 未全量读取 `.sql` 正文。
 
 ## Output checklist
 
-- 更新了哪些小节、新增/修改了哪些条目。
-- 读取了哪些 `CHANGELOG` 的 delta（来源证据）。
-- 是否重跑了 `index_ai`（若 `.cursor/**` 有变化）。
+- 渲染了哪些 zone、人工区改了哪些行。
+- 读取了哪些 changelog 的 delta（来源证据）。
+- 是否重跑了 `tuner-index-ai`。

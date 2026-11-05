@@ -1,12 +1,12 @@
-"""Dump table DDL (DataGrip "auto-generated definition" style) into ``assets/ddl``.
+"""Dump table DDL (DataGrip "auto-generated definition" style) into ``knowledge/ddl``.
 
 The framework supports MySQL, SQL Server, and PostgreSQL side by side;
 datasources are named in ``config/env.py`` -> ``DATABASES`` (business alias ->
 connection config incl. ``type``). Pick the target with ``--datasource``
 (default ``main``); output is grouped per datasource under
-``assets/ddl/<alias>/``.
+``knowledge/ddl/<alias>/`` (pre-7.0 workspaces: ``assets/ddl`` until migrated).
 
-For each requested table this writes ``assets/ddl/<alias>/<table>.sql``
+For each requested table this writes ``knowledge/ddl/<alias>/<table>.sql``
 containing:
 
 1. A best-effort DataGrip-style ``create table`` definition:
@@ -44,14 +44,13 @@ from __future__ import annotations
 import argparse
 import pathlib
 import re
-import sys
 from dataclasses import replace
 from typing import Any
 
 from tuner_testkit.apps._shared.changelog import append_entry
 from tuner_testkit.db import DEFAULT_ALIAS, DbClient, get_settings
 from tuner_testkit.logging import log_data_setup, log_error, log_info, log_warn
-from tuner_testkit.project import ddl_dir, ensure_project_on_path, project_root
+from tuner_testkit.project import ddl_dir, ensure_project_on_path
 
 # Allow Unicode word chars (some tables carry CJK suffixes) plus `$`/`-`, while
 # still rejecting backticks, quotes, spaces and other injection vectors.
@@ -869,7 +868,7 @@ def _dump_one_mssql(
 def main(argv: list[str] | None = None) -> int:
     ensure_project_on_path()
     parser = argparse.ArgumentParser(
-        description="Dump table DDL + sample INSERT into assets/ddl/<datasource>/<table>.sql",
+        description="Dump table DDL + sample INSERT into knowledge/ddl/<datasource>/<table>.sql",
     )
     parser.add_argument(
         "tables",
@@ -899,7 +898,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="output directory (default: <repo>/assets/ddl/<datasource>)",
+        help="output directory (default: <repo>/knowledge/ddl/<datasource>)",
     )
     parser.add_argument(
         "--no-sample",
@@ -1010,10 +1009,10 @@ def main(argv: list[str] | None = None) -> int:
         total = len(tables)
 
     # Auto-area changelog: one line per run so `maintain-index` can update
-    # INDEX.md from the delta without re-reading every generated .sql body.
+    # INDEX.project.md from the delta without re-reading every generated .sql body.
     if written:
         append_entry(
-            project_root() / "assets" / "CHANGELOG.md",
+            ddl_dir() / "CHANGELOG.md",
             tool="dump_ddl",
             action="dump-ddl",
             items=written,

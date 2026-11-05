@@ -447,7 +447,7 @@ class PageDriver:
 
     def _locate(self, step: Step, ctx: _ExecContext) -> ResolvedLocator:
         return self.resolve(
-            str(getattr(step, "element")),
+            str(step.element),
             elements=ctx.model.elements,
             policy=ctx.policy,
             page_id=ctx.model.id,

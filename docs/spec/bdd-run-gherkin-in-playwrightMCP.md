@@ -8,7 +8,9 @@ description: Spec for running Gherkin scenarios (or explore sessions) via Playwr
 
 ## 适用范围
 
-- 本规范服务于 **Playwright MCP → 持久 evidence → API Object freeze** 路径。
+- 本规范服务于 **浏览器通道 → 持久 evidence → API Object freeze** 路径。浏览器通道由 config
+  `CHANNELS.browser` 选择（默认 `playwright-mcp`，也可 `cursor-browser`），工具映射与证据落盘见
+  `docs/spec/browser-channel.md`；下文写「Playwright MCP」处按所选通道替换工具名。
 - 既覆盖「已有 `.feature` 的 Run→Capture」，也覆盖
   **explore-first**（尚无 `.feature`）的同等落盘。总流程见
   `docs/spec/sut-self-learning.md`。
@@ -21,7 +23,7 @@ description: Spec for running Gherkin scenarios (or explore sessions) via Playwr
 - 让 AI 能通过 Playwright MCP 执行场景或探索会话，并将过程中的网络请求/响应、
   DOM 快照、操作序列**脱敏后持久化**到 `artifacts/evidence/<run_id>/`，
   进而稳定生成/更新 `packages/api_objects/`、`packages/page_objects/`、
-  `assets/design/`。
+  `knowledge/wiki/design/`。
 - **必须落盘**：不接受「只在 LLM 上下文里留一份摘要」。没有带时间戳的
   持久 trace，就无法做 API 与 DB 写入的时间窗关联。
 
@@ -38,7 +40,7 @@ Fingerprint 匹配已有 api_objects
   ↓
 生成/更新 APIModel（只补稳定契约、稳定断言、稳定提取）
   ↓
-（可选）结合 DDL / 源码 / 日志 → assets/design/**
+（可选）结合 DDL / 源码 / 日志 → knowledge/wiki/design/**
 ```
 
 ## Evidence 落盘（强制）

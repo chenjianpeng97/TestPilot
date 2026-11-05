@@ -1,7 +1,7 @@
 [project]
 name = "tuner-testkit"
-version = "6.3.0"
-description = "Shared test runtime, recorders, and DNA overlay for SUT test repos"
+version = "7.0.0"
+description = "TestPilot: shared test runtime, recorders, and DNA overlay for SUT test workspaces"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -83,6 +83,7 @@ tuner-action-words = "tuner_testkit.action_words.__main__:main"
 tuner-evidence = "tuner_testkit.apps.evidence.cli:main"
 tuner-task = "tuner_testkit.apps.task.cli:main"
 tuner-testreport = "tuner_testkit.apps.testreport.cli:main"
+tuner-openapi-import = "tuner_testkit.apps.openapi_import.cli:main"
 tuner-workbench = "tuner_testkit.workbench.cli:main"
 
 [build-system]
@@ -110,6 +111,18 @@ members = ["dogfood"]
 page_objects = "packages/page_objects"
 api_objects = "packages/api_objects"
 mocks = "data/mocks"
+
+[tool.ruff]
+# CI runs the same release: `uvx ruff@0.17.3 check .`
+required-version = ">=0.17.3,<0.18"
+target-version = "py312"
+extend-exclude = ["tuner_testkit/apps/dna/dna_payload", "build", "dist"]
+
+[tool.ruff.lint]
+# Correctness, not style: syntax / import placement / statement errors (E4, E7, E9),
+# pyflakes (F), bugbear (B), and blind except (BLE). A broad `except Exception`
+# must say why: `# noqa: BLE001 -- <reason>`.
+select = ["E4", "E7", "E9", "F", "B", "BLE"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

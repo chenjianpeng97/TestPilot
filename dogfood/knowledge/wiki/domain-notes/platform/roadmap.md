@@ -1,12 +1,12 @@
 ---
 domain: platform
 source: 工作台愿景评估与演进（plan 2026-09-22，chat 复盘 tuner-test-workspace 现状）
-date: 2026-09-22
-version: 1.0.0
+date: 2026-11-04
+version: 1.1.0
 confidence: high
 ---
 
-# tuner-testkit 平台路线图（A → B → C → D）
+# TestPilot（tuner-testkit）平台路线图（A → B → C → D）
 
 > 本文件是 `dogfood/` 这个 workspace 的「被测系统知识」：被测系统就是 tuner-testkit 平台本身。
 > 平台仓根 `ROADMAP.md` 只保留指针，路线以本文件为准；变更请 bump `version` 并在末尾追加变更说明。
@@ -35,7 +35,7 @@ confidence: high
 - A4 artifacts 规范：`docs/spec/artifacts-layout.md` + run `manifest.json`。
 - A5 工程卫生：CI（ruff / pytest / index 与 manifest check / scaffold 冒烟）、pre-commit secret-scan、scaffold `.gitignore`、logging hooks 接线。
 - A6 多 IDE：`tuner-dna sync --target`，先覆盖 skills + `AGENTS.md`。
-- A7 「QA 一天」验收：五条日常路径在 `dogfood/` 走通（见 `assets/usecases/platform/qa-daily-journeys.md`）。
+- A7 「QA 一天」验收：五条日常路径在 `dogfood/` 走通（见 `knowledge/wiki/usecases/platform/qa-daily-journeys.md`）。
 
 ## 4. B 阶段任务
 
@@ -52,6 +52,22 @@ confidence: high
 - C2 `generate-test-report` skill：固定落点 `assets/testreport/<sut>/<yyyy-mm>/<slug>.md` + 固定章节。
 - C3（畅想）`tuner-publish --sink`、`artifacts/exports/` 暂存区、MCP server 入口。
 
+## 5.1 TestPilot 7.0（对照 `testpilot框架设计.excalidraw` 的收口）
+
+心智模型：测试工程师 → TestPilot（rules / hooks 约束层 + 三组 skill）→ WorkSpace（知识层、资产层、工具、数据、测试、配置）→ 四条通道 → 被测系统。
+
+| 主题 | 7.0 落地 | 后续 |
+| --- | --- | --- |
+| 知识与资产分离 | 顶层 `knowledge/`（ddl / raw / wiki / requirements / defects）；`assets/` 只留测试资产；`migrate knowledge` | wiki lint 的自动化程度、需求覆盖率进报告 |
+| 可用性 | `health-check`（`tuner-workspace doctor`）、`upgrade-framework`（`.tuner-dna.json` + `--prune`）、`maintain-config` | doctor 进 CI 的 strict 门槛 |
+| 配置 | `OPS / PORTS / CHANNELS / KNOWLEDGE`；`show --json`、`validate` | 环境间差异对比 |
+| 端口与自定义 apps | `log-source`；`@tool(port=)`；dogfood 参考适配器 | 只在取数方式各团队不同时加端口（如 Rancher 操作） |
+| 缺陷库 | 像用例一样：`knowledge/defects/<DEF-ID>.md` 固定模板、`tuner_testkit.defects` 校验、`maintain-defectlib` | 缺陷趋势进报告 |
+| 浏览器通道 | `CHANNELS.browser`：Playwright MCP / Cursor 浏览器 | Cursor 浏览器的网络证据补全 |
+| 追溯 | 对象级 changelog + version bump，pre-commit 校验；inbox 只给 agents | changelog 进工作台 |
+| 收敛 | 对外 13 个入口 skill（知识 3 / 动作 6 / 可用性 4），其余 `internal` | 按使用数据继续合并 |
+| DNA 两份视图 | 平台专属路径与 `platform-only` 块不下发 | — |
+
 ## 6. 版本节奏
 
 - 先行（不发版）：A0。
@@ -61,3 +77,4 @@ confidence: high
 ## 变更说明
 
 - 1.0.0（2026-09-22）：首版，来自评估复盘。
+- 1.1.0（2026-11-04）：加 5.1 节 TestPilot 7.0：知识层、可用性、配置、端口、浏览器通道、追溯、收敛；产品名统一为 TestPilot。

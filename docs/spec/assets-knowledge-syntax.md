@@ -1,85 +1,54 @@
-# assets 知识层规范（assets-knowledge-syntax）
+# 资产层规范（assets-knowledge-syntax）
 
-> `assets/` 是平台的**知识地基**：给人和 LLM 阅读、作为生成测试代码/工具的依据。
-> 本规范定义目录分类、文件元数据、raw 与 curated 的边界，以及可追溯原则。
-> 配套硬约束见 `.cursor/rules/assets-knowledge.mdc`；全局发现入口见根 `INDEX.md`。
-> SUT 自学习如何消费这些知识见 `docs/spec/sut-self-learning.md`；
-> `design/` 的正文 schema 见 `docs/spec/design-knowledge-syntax.md`。
+> 资产层是**测试资产活文档**：随测试工作演进。Markdown 资产在 `assets/`，Python 资产在 `packages/`
+> （`api_objects/`、`page_objects/`、`action_words/`，见各自的 syntax 规范）。
+> 被测系统的知识（DDL、wiki、需求、缺陷）在知识层 `knowledge/`，见 `docs/spec/knowledge-syntax.md`。
+> 配套硬约束见 `.cursor/rules/assets-knowledge.mdc`；资产地图见 `INDEX.project.md` §2。
+> （文件名保留历史名称；7.0 起 ddl、domain-notes、usecases、explore、design 已移到 `knowledge/`。）
 
 ## 1. 目录分类
 
 ```text
 assets/
-├── ddl/<datasource>/<table>.sql   # 工具产出(自动区): 表结构，tuner-dump-ddl 生成
-├── sql/<name>.sql                 # 人类可读的业务 SQL 副本
-├── usecases/<domain>/<name>.md    # 禅道/XMind 导出、整理后的用例
-├── domain-notes/<domain>/<name>.md# 业务讲解、字段含义、权限规则、环境约束
-├── explore/<app>/<name>.md        # 探索式测试产出的能力清单 / 站点地图（半自动）
-├── design/<app>/<route-slug>.md   # API↔DB effects 收敛知识（见 design-knowledge-syntax）
-├── testdesign/<sut>/<slug>.md     # 测试设计（见 test-design-syntax）；执行反馈回写在此
-├── testcases/README.md                         # 功能用例集总索引（见 testcase-syntax）
-├── testcases/<模块>/README.md                  # 模块范围与套件清单
-├── testcases/<模块>/<套件>/README.md           # 套件说明与用例索引
-├── testcases/<模块>/<套件>/<用例ID>.md         # 一条用例一个文件
-├── testsheet/<轮次>/testsheet.md              # 一次测试单。步骤链接本目录副本
+├── sql/<name>.sql                                  # 人类可读的业务 SQL 副本（实现在 packages/ 的 action word / 服务）
+├── testdesign/<sut>/<slug>.md                      # 测试设计（test-design-syntax）；执行反馈回写在此
+├── testdesign/CHANGELOG.md
+├── testcases/README.md                             # 功能用例集总索引（testcase-syntax）
+├── testcases/CHANGELOG.md                          # 用例库维护流水
+├── testcases/<模块>/README.md                      # 模块范围与套件清单
+├── testcases/<模块>/<套件>/README.md               # 套件说明与用例索引
+├── testcases/<模块>/<套件>/<用例ID>.md             # 一条用例一个文件
+├── testsheet/CHANGELOG.md                          # 测试单组单与执行流水
+├── testsheet/<轮次>/testsheet.md                   # 一次测试单。步骤链接本目录副本
 ├── testsheet/<轮次>/testcase/<模块>/<套件>/<用例ID>.md  # 从用例库复制的本次步骤
-├── testreport/<name>.md           # 测试报告类原始资产
-└── CHANGELOG.md                   # 自动区变更流水(供 maintain-index 读取 delta)
+├── testsheet/<轮次>/evidence/                      # 手工执行的截图等
+├── testreport/<sut>/<yyyy-mm>/<slug>.md            # 测试报告（整理稿，入库）
+└── testreport/profiles/<sut>.md                    # 报告画像：不随轮次变化的报告字段（tuner-testreport draft 读取）
 ```
 
-- **自动区**（工具产出，可被覆盖重写）：`ddl/`、以及每次生成会追加 `CHANGELOG.md`。
-  人不手改这些文件的内容语义；要更新就重跑工具。
-- **人工/半自动区**：`sql/`、`usecases/`、`domain-notes/`、`explore/`、`design/`、`testdesign/`、`testcases/`、`testsheet/`、`testreport/`。
-- `testsheet/<轮次>/testsheet.md` 不写 YAML 头，正文按测试单格式。同目录 `testcase/` 是用例库的原样副本，保留复制时的文件头。维护方式见 skill `maintain-testsheet`。
-- `apidoc/` **不单列**：人工导入的接口说明放 `domain-notes/` 或 `usecases/`；
-  运行时冻结的契约在 `packages/api_objects/`。是否再拆目录留给下游实践决定。
+- `testsheet/<轮次>/testsheet.md` 不写 YAML 头，正文按测试单格式。同目录 `testcase/` 是用例库的原样副本，保留复制时的文件头。
+  组单见 skill `maintain-testsheet`，执行见 `execute-testsheet`。
+- 回归的原始结果在 `artifacts/reports/<run_id>/`（不入库），整理后的报告才进 `assets/testreport/`。
 
-## 2. 文件头元数据（front-matter）
+## 2. 文件头元数据
 
-**人工/半自动区**的 `.md` / `.sql` 文件建议在文件头写元数据：
+Markdown 资产写 YAML front-matter；字段家族见 `docs/spec/metadata-conventions.md`，按类：
 
-Markdown（YAML front-matter）：
+- 测试设计：`docs/spec/test-design-syntax.md`。
+- 用例：`docs/spec/testcase-syntax.md`（含 `requirements`、`data` 追溯字段）。
+- 报告：`kind: testreport`，见 metadata-conventions §2。
+- SQL 副本用顶部 `--` 注释写 `domain / source / date / version / confidence`。
 
-```markdown
----
-domain: authorization
-source: zentao#1234
-date: 2026-08-15
-version: 1.0.0
-confidence: high
-evidence: []          # 可选：artifacts/evidence/<run_id> 列表（explore/design 建议填）
----
-```
+`confidence: high` 表示人工核实过，LLM 优先采信。
 
-SQL（顶部行注释，等价字段）：
+## 3. 可追溯
 
-```sql
--- domain: authorization
--- source: 手工核对(生产只读库)
--- date: 2026-08-15
--- version: 1.0.0
--- confidence: high
-SELECT ...
-```
+- 每份资产能回答「从哪来、何时、什么版本、多可信」：`source` 指回需求 ID、wiki 页或 evidence。
+- 被维护的库（testcases、testsheet、testdesign，以及 `packages/` 三类对象）每次维护：单元 bump `version`，
+  库根 changelog 追加一行（`tuner-workspace changelog append`），见 metadata-conventions §4。
 
-- `confidence` 是 LLM 的**采信优先级**信号：`high` 的人工经验优先于自动推断。
-- `ddl/` 由工具产出，不要求 front-matter；其可信度来自 `CHANGELOG.md`。
-- `explore/` 与 `design/` 应填 `evidence`，把知识指回一次 MCP/工具运行。
+## 4. 与其它层的关系
 
-## 3. raw 与 curated 的边界
-
-- **raw**（原始导入物，如禅道/XMind 直出 CSV/MD）：**不得改写语义**，只允许补充元数据头与放置到正确目录。
-- **curated**（加工后的知识）：可编辑，但必须保留 `source` 指回 raw 来源，并 bump `version`。
-
-## 4. 可追溯原则
-
-- 每份知识都能回答"从哪来、何时、什么版本、多可信"。
-- 更新 curated 知识 → bump `version` 并在正文追加简短变更说明。
-- 自动区更新 → 由工具写 `CHANGELOG.md`。
-
-## 5. 与其它层的关系
-
-- 造数 action word 从 `assets/ddl/<datasource>/<table>.sql` 取列名。
-- 业务 SQL 服务在 `packages/<domain>/` 实现，同时镜像人类可读副本到 `assets/sql/`。
-- 探索会话产出能力清单 → `assets/explore/`；effects 知识 → `assets/design/`。
-- 生成任何测试/资产前，先查根 `INDEX.md`（及存在时的 `INDEX.project.md`）。
+- 用例的依据来自 `knowledge/`：需求（`knowledge/requirements/`）、业务规则（`knowledge/wiki/`）、真实列名（`knowledge/ddl/`）。
+- 造数 action word 从 `knowledge/ddl/<datasource>/<table>.sql` 取列名；业务 SQL 同时镜像到 `assets/sql/`。
+- 生成任何测试或资产前，先查 `INDEX.project.md`。

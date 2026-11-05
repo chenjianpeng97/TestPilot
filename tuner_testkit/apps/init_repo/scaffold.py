@@ -1,4 +1,4 @@
-"""Scaffold a new SUT test repo: six-layer skeleton + DNA overlay + kit dependency."""
+"""Scaffold a new TestPilot workspace: layered skeleton + DNA overlay + kit dependency."""
 from __future__ import annotations
 
 import pathlib
@@ -7,15 +7,22 @@ import shutil
 import textwrap
 
 SKELETON_DIRS: tuple[str, ...] = (
-    "assets/ddl",
+    # knowledge layer — evolves with the SUT (docs/spec/knowledge-syntax.md)
+    "knowledge/ddl",
+    "knowledge/raw",
+    "knowledge/wiki/domain-notes",
+    "knowledge/wiki/usecases",
+    "knowledge/wiki/explore",
+    "knowledge/wiki/design",
+    "knowledge/requirements",
+    "knowledge/defects",
+    # asset layer (Markdown) — evolves with the test work
     "assets/sql",
-    "assets/usecases",
-    "assets/domain-notes",
-    "assets/explore",
-    "assets/design",
-    "assets/testreport",
+    "assets/testdesign",
     "assets/testcases",
     "assets/testsheet",
+    "assets/testreport",
+    "work/tasks",
     "packages/action_words/db_seed",
     "packages/action_words/db_assert",
     "packages/action_words/api_request",
@@ -36,11 +43,16 @@ SKELETON_DIRS: tuple[str, ...] = (
     "artifacts/evidence",
     "artifacts/catalogs",
     "artifacts/inbox",
+    "artifacts/runs",
+    "artifacts/reports",
 )
 
 # Thin SUT files copied from this template (not the full kit runtime).
 _STUB_FILES: tuple[str, ...] = (
     "config/env.py",
+    "config/env_local.py.example",
+    "knowledge/wiki/index.md",
+    "knowledge/wiki/log.md",
     "packages/__init__.py",
     "packages/page_objects/__init__.py",
     "packages/page_objects/session.py",
@@ -147,7 +159,7 @@ def _write_pyproject(
             [project]
             name = "{project_name}"
             version = "0.1.0"
-            description = "Test repo created from tuner-testkit"
+            description = "TestPilot workspace created from tuner-testkit"
             requires-python = ">=3.12,<3.14"
             dependencies = [
                 "tuner-testkit[db,api]>={kit_version}",

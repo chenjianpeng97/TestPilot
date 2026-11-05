@@ -1,6 +1,6 @@
 ---
 name: testcase-syntax
-version: 1.4.0
+version: 1.5.0
 description: assets/testcases 的模块、套件目录、单用例文件，以及和 TestLink 对齐的步骤字段。功能用例集的唯一事实源。
 ---
 
@@ -14,7 +14,7 @@ description: assets/testcases 的模块、套件目录、单用例文件，以�
 
 | 路径 | 记什么 |
 | --- | --- |
-| `assets/usecases/` | 导入或讲解过的业务场景，不是带稳定 ID 的用例集 |
+| `knowledge/wiki/usecases/` | 导入或讲解过的业务场景，不是带稳定 ID 的用例集 |
 | `assets/testdesign/` | 一次任务的范围、策略和点击路径 |
 | `assets/testcases/` | 按模块 / 套件维护的用例集。每条用例一个文件、一个稳定 ID |
 | `tests/features/` | 已自动化的 Gherkin。本规范不写 `.feature` |
@@ -72,7 +72,9 @@ type: 正向
 status: 就绪
 execution: 手工
 stages: [冒烟]
-source: <assets/… 或需求名>
+source: knowledge/requirements/REQ-user-login.md
+requirements: [REQ-user-login]
+data: [account:qa-admin]
 version: 1.0.0
 confidence: medium
 ---
@@ -119,6 +121,13 @@ confidence: medium
 
 `stages` 可选，表示这条用例应在哪些测试阶段执行。取值是非空列表，元素只取 `冒烟` 或 `系统测试`，不重复。一条用例可同时属于多个阶段，例如 `stages: [冒烟, 系统测试]`。不知道或不标注就省略该字段。`type` 仍只表示正向/反向，不要把阶段写进 `type`。
 
+`requirements` 可选但推荐：这条用例覆盖的需求 ID 列表（`REQ-<slug>`），文件在 `knowledge/requirements/<REQ-ID>.md`。
+需求库存在时 `python -m tuner_testkit.testcases` 校验每个 ID 都有文件；`tuner-workspace doctor` 报告需求覆盖率。
+`source` 写最直接的依据（需求文件、wiki 页或原件）。
+
+`data` 可选：用到的测试数据，`data/<path>`（入库的数据文件，必须存在）或 `account:<id>`（`data/sut-accounts.local.yaml` 的账号 id）。
+不指向 `.local.` 文件，不写密码。规则见 `docs/spec/data-syntax.md`。
+
 一级标题必须是 `<id> <title>`。`title` 末尾不要加 `（废弃）`。
 
 ## 5. 用例 ID
@@ -136,7 +145,7 @@ ID 是全库唯一键：`<id_prefix>-<slug>`。
 
 `assets/testreport/` 与 `artifacts/evidence/` 里的旧序号是当时的报告键和文件名，不回写。
 
-没有依据的业务规则不要写进操作或预期。依据来自用户说明，或 `INDEX.md` / `INDEX.project.md` 能指向的 usecase、domain-notes、explore、design。
+没有依据的业务规则不要写进操作或预期。依据来自用户说明，或 `INDEX.project.md` 能指向的 `knowledge/requirements/` 需求与 `knowledge/wiki/` 下的 usecase、domain-notes、explore、design。
 
 ## 6. 和 TestLink 的对应
 
@@ -181,6 +190,11 @@ confidence: medium
 模块 README 用 `kind: testcase-module`。总索引用 `kind: testcase-index`。
 
 人工修改后 bump 被改文件的 `version`。改一条用例的操作或预期时，只 bump 该用例文件。增删用例，或修改套件详情时，bump 套件 README。署名用 `tuner-workspace meta stamp <path> --kind testcase`（套件 README 用 `testcase-suite`，模块 README 用 `testcase-module`，总索引用 `testcase-index`）。
+
+每次维护在 `assets/testcases/CHANGELOG.md` 追加一行（新建、更新、废弃、删除、搬家各写清 `items` 与 `version`）：
+`tuner-workspace changelog append --area testcases --skill maintain-testcases --action 更新 --items <用例ID> --version 1.0.0->1.1.0 --reason …`。
+pre-commit 的 `tuner-workspace changelog check --staged` 会拒绝没有 changelog 行或没 bump 版本的用例改动。
+`CHANGELOG.md` 与 `README.md` 是 `assets/testcases/` 根目录仅允许的两个文件。
 
 ## 8. 三份 README
 

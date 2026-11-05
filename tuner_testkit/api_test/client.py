@@ -161,7 +161,6 @@ class ApiClient:
         url = f"{self.base_url.rstrip('/')}{model.path}"
 
         hp = model.headers_policy or {}
-        allowlist = [str(x) for x in hp.get("allowlist", [])]
         forbidden = [str(x) for x in hp.get("forbidden", [])]
 
         # model.Invocation already enforces allowlist. Here we do a final forbidden/sensitive check.
@@ -254,11 +253,11 @@ class ApiClient:
         raw_content = bytes(raw_content_attr) if raw_content_attr else b""
         try:
             text = r.text or ""
-        except Exception:
+        except (UnicodeDecodeError, LookupError):
             text = ""
         try:
             parsed = r.json()
-        except Exception:
+        except ValueError:  # JSONDecodeError (json / requests) is a ValueError
             parsed = None
 
         ok = 200 <= int(r.status_code) < 300

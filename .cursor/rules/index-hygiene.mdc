@@ -1,36 +1,37 @@
 ---
-description: Keep the repo-level INDEX.md current and require managed assets to leave a changelog trail; index is the discovery entry for humans and the LLM
-globs: assets/**,packages/api_objects/**,packages/page_objects/**,apps/**,tuner_testkit/apps/**,dogfood/assets/**,dogfood/packages/**,dogfood/apps/**,dogfood/INDEX.project.md
+description: Keep INDEX.project.md current and require managed libraries to leave a changelog trail; the index is the discovery entry for humans and the LLM
+globs: knowledge/**,assets/**,packages/api_objects/**,packages/page_objects/**,packages/action_words/**,apps/**,tuner_testkit/apps/**,dogfood/knowledge/**,dogfood/assets/**,dogfood/packages/**,dogfood/apps/**,dogfood/INDEX.project.md
 alwaysApply: false
-version: 1.3.0
+version: 2.0.0
 ---
 
 # index-hygiene — 索引与留痕纪律
 
-根 `INDEX.md` 是**平台**能力地图（发现入口）。若存在 `INDEX.project.md`，那是试验田 / 下游项目仓的**业务资产**地图；两份索引都必须与各自职责范围内的仓库状态一致。
-平台仓内的 `dogfood/` 是用 scaffold 生成的 workspace，它的业务地图是 `dogfood/INDEX.project.md`。
+`INDEX.project.md` 是 workspace 的**业务资产地图**（发现入口）：知识层 `knowledge/`、资产层 `assets/` + `packages/`、工具 `apps/`、端口适配器、测试。
+它必须与仓库状态一致。AI 组件见 `.cursor/REGISTRY.md`。
+
+<!-- platform-only:begin -->
+平台仓另有根 `INDEX.md`（平台能力地图：kit 模块、`tuner-*` 工具、DNA）。平台工具 / 公共包登记在 `INDEX.md`；
+`dogfood/` 是 scaffold 生成的 workspace，它的业务地图是 `dogfood/INDEX.project.md`。
+<!-- platform-only:end -->
 
 ## 留痕（changelog trail）
 
-- **自动区**（工具产出：`assets/ddl/`、`packages/api_objects/`、`packages/page_objects/` 等）：由**生成工具**在写文件时
-  追加 changelog（`assets/CHANGELOG.md` / `packages/api_objects/CHANGELOG.md` /
-  `packages/page_objects/CHANGELOG.md`），格式见
-  `docs/spec/apps-authoring-syntax.md`。人不手改自动区语义，要更新就重跑工具。
-- **人工/半自动区**（`assets/usecases`、`domain-notes`、`explore`、`design`、`sql`、新 page/api object、新 app）：
-  新增/变更后应在对应索引登记一行（或运行 `maintain-index` skill 增量补齐）：
-  平台工具/公共包 → `INDEX.md`；业务 DDL/用例/api_objects/page_objects/features → 有 `INDEX.project.md` 则写那里，否则写 `INDEX.md`。
+- 每个被维护的库在库根有 changelog（`knowledge/ddl/`、`knowledge/wiki/log.md`、`knowledge/requirements/`、`knowledge/defects/`、
+  `assets/testcases/`、`assets/testsheet/`、`assets/testdesign/`、`packages/{api_objects,page_objects,action_words}/`），
+  清单与行格式见 `docs/spec/metadata-conventions.md` §4。
+- **工具自动区**（`knowledge/ddl/`、录制产出的 `packages/api_objects/`、`packages/page_objects/`）：生成工具写 changelog；人不手改自动区语义，要更新就重跑工具。
+- **人工 / LLM 维护区**：每次维护用 `tuner-workspace changelog append` 追加一行，并 bump 单元 `version`。pre-commit 跑 `changelog check --staged`。
 
 ## 增量维护（省 token）
 
-- 索引里 `<!-- auto:begin:<zone> -->` 围栏内的区块由 `tuner-workspace index render` 从
-  `artifacts/catalogs/workspace.json` 确定性渲染，**禁止手写**；CI 跑 `tuner-workspace index check`。
-- 围栏外的人工区更新 `INDEX.md` 时**优先读各区 `CHANGELOG` 的 delta**，据此补条目；
-  **不要为维护索引而全量读取 `assets/ddl/*.sql` 正文**。
-- AI 组件区（`.cursor/**`）不手写进 `INDEX.md`：由 `python -m tuner_testkit.apps.index_ai`
-  确定性生成 `.cursor/REGISTRY.md`，`INDEX.md` 只链接过去。
+- `<!-- auto:begin:<zone> -->` 围栏内由 `tuner-workspace index render` 从 catalog 确定性渲染，**禁止手写**；CI 跑 `tuner-workspace index check`。
+  围栏：`ddl`、`knowledge`、`sql`、`assets`、`api_objects`、`page_objects`、`action_words`、`apps`、`ports`、`features`。
+- 围栏外的人工区更新时**优先读各库 changelog 的 delta**，据此补条目；**不要为维护索引而全量读取 `knowledge/ddl/*.sql` 正文**。
+- AI 组件不手写进索引：`tuner-index-ai` 生成 `.cursor/REGISTRY.md`。
+- wiki 页的目录在 `knowledge/wiki/index.md`（`maintain-wiki` 维护），`INDEX.project.md` 只写用途与采信说明。
 
 ## 一致性
 
-- 新增/删除工具（`apps/` 或 `tuner_testkit/apps/`）→ 更新 `INDEX.md` 第 3 节 + 该工具交接文档。
-- 冻结新的 api_object / page_object → 更新业务索引第 2.1 / 2.2 节（有 `INDEX.project.md` 写那里，否则 `INDEX.md`）。
-- 回填新的 DDL/用例/业务 SQL → 更新业务索引第 1 节（有 `INDEX.project.md` 写那里，否则 `INDEX.md`；或跑 `maintain-index`）。
+- 新增 / 删除 `apps/<name>/tool.py` → 跑 `tuner-workspace index render`（第 3 节与 3.1 端口自动更新）+ 该工具交接文档。
+- 冻结新的 api_object / page_object、回填 DDL、ingest 需求或缺陷 → 跑 `index render`，必要时在人工区写一句用途。

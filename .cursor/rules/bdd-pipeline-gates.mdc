@@ -1,15 +1,15 @@
 ---
 description: Three gates for the BDD/self-learning asset pipeline (evidence capture, API-object freeze, stage regression); skipped when user explicitly requests pytest
-globs: tests/features/**,packages/api_objects/**,packages/page_objects/**,assets/design/**
+globs: tests/features/**,packages/api_objects/**,packages/page_objects/**,knowledge/wiki/design/**
 alwaysApply: false
-version: 3.0.0
+version: 3.1.0
 ---
 
 # BDD / self-learning pipeline — three gates
 
 > **Scope**: this rule governs **behave/BDD** asset work **and** explore-first
 > writes into `packages/api_objects/**`, `packages/page_objects/**`,
-> `assets/design/**`. Auto-attaches on those globs. It is **not** a
+> `knowledge/wiki/design/**`. Auto-attaches on those globs. It is **not** a
 > platform-wide default. Task routing lives in [`AGENTS.md`](../../AGENTS.md);
 > the BDD **lower half** is orchestrated by
 > [`bdd-asset-pipeline`](../agents/bdd-asset-pipeline.md). Explore-first
@@ -27,10 +27,12 @@ version: 3.0.0
 ## Gate 1 — Evidence is mandatory (explore-first OK)
 
 Any write into `packages/api_objects/**`, `packages/page_objects/**`, or
-`assets/design/**` **must** cite at least one `artifacts/evidence/<run_id>/`
-record (sanitized). The evidence may come from:
+`knowledge/wiki/design/**` **must** cite at least one `artifacts/evidence/<run_id>/`
+record (sanitized), or an OpenAPI document imported with `tuner-openapi-import`
+(api_objects only). The evidence may come from:
 
-- an **explore session** (no `.feature` yet) via Playwright MCP, or
+- an **explore session** (no `.feature` yet) via the configured browser channel
+  (`CHANNELS.browser`: Playwright MCP by default, or the Cursor browser; see `docs/spec/browser-channel.md`), or
 - a **feature run** via `run-feature-playwright-mcp`.
 
 Do **not** require a pre-existing `.feature` just to satisfy this gate.
@@ -62,7 +64,7 @@ After **behave/BDD** asset changes under `tests/features/`:
 - Do **not** fail the task for a stage that has no feature yet.
 - For user-explicit **pytest** work, prove with `pytest <path>` instead.
 
-When writing assertions, consult `assets/design/**` first: assert `writes`
+When writing assertions, consult `knowledge/wiki/design/**` first: assert `writes`
 tables, skip `noise` tables, use `correlate` / `identity` for locating rows.
 
 ## Enforcement summary

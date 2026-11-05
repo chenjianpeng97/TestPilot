@@ -1,13 +1,15 @@
 # dogfood — 用本仓 scaffold 出的 workspace
 
 这是 `tuner-init scaffold` 从平台仓生成的一个**真实 workspace**，被测系统（SUT）就是平台本身
-（kit CLI、skills、后续的工作台）。它承担两件事：
+（TestPilot：kit CLI、skills、工作台）。它承担三件事：
 
-- **知识管理**：`assets/domain-notes/platform/roadmap.md`（平台路线图 A→B→C→D）、
-  `assets/usecases/platform/qa-daily-journeys.md`（「QA 一天」验收剧本）、
-  `assets/usecases/workbench/lightweight-user.md`（轻量用户使用工作台）。
+- **知识管理**：`knowledge/wiki/domain-notes/platform/roadmap.md`（平台路线图 A→B→C→D）、
+  `knowledge/wiki/usecases/platform/qa-daily-journeys.md`（「QA 一天」验收剧本）、
+  `knowledge/wiki/usecases/workbench/lightweight-user.md`（轻量用户使用工作台）。
 - **活文档**：`tests/features/platform/*.feature`（A7 验收）、`tests/features/workbench/*.feature`（B 验收）。
   未落地的场景标 `@wip`，随平台能力逐个解除。
+- **参考实现**：`apps/sample_log_source/` 是 `log-source` 端口的参考适配器（读 `data/sample-logs/`），`config/env.py` 的 `PORTS` 已绑定它；
+  `uv run --directory dogfood tuner-workspace doctor` 里 `ports.log-source` 应为 `ok`。
 
 业务资产地图见 [`INDEX.project.md`](INDEX.project.md)。平台自身的能力地图在仓根 `INDEX.md`。
 

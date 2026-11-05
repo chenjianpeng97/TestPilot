@@ -40,15 +40,16 @@ Feature: 测试工程师在 workspace 里的一天
     And 工作区目录应包含工具 "sample_tool" 及其参数结构
 
   @cli @offline
-  Scenario Outline: 按六层 scope 提交并得到确定性的校验结果
+  Scenario Outline: 按分层 scope 提交并得到确定性的校验结果
     Given 暂存了 "<path>" 的改动
     When 我用首行 "<header>" 提交
     Then 提交信息校验结果应为 "<result>"
 
     Examples:
-      | path                    | header                                | result |
-      | apps/sample_tool/cli.py | feat(apps): add sample tool           | 通过   |
-      | apps/sample_tool/cli.py | feat(docs): add sample tool           | 拒绝   |
-      | assets/ddl/main/t.sql   | chore(assets): refresh ddl            | 通过   |
-      | packages/action_words/a | feat(packages): add seed word         | 通过   |
-      | dogfood/README.md       | docs(dogfood): explain dogfood layout | 通过   |
+      | path                       | header                                | result |
+      | apps/sample_tool/cli.py    | feat(apps): add sample tool           | 通过   |
+      | apps/sample_tool/cli.py    | feat(docs): add sample tool           | 拒绝   |
+      | knowledge/ddl/main/t.sql   | chore(knowledge): refresh ddl         | 通过   |
+      | knowledge/ddl/main/t.sql   | chore(assets): refresh ddl            | 拒绝   |
+      | packages/action_words/a    | feat(packages): add seed word         | 通过   |
+      | dogfood/README.md          | docs(dogfood): explain dogfood layout | 通过   |

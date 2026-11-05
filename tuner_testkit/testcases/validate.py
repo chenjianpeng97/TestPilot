@@ -23,6 +23,8 @@ STATUSES = {"就绪", "废弃"}
 EXECUTIONS = {"手工", "自动"}
 IMPORTANCES = {"低", "中", "高"}
 STAGES = {"冒烟", "系统测试"}
+REQ_ID = re.compile(r"^REQ-[A-Za-z0-9][A-Za-z0-9_-]*$")
+ROOT_FILES = {"README.md", "CHANGELOG.md"}
 
 
 def validate_tree(root: Path) -> list[str]:
@@ -31,6 +33,7 @@ def validate_tree(root: Path) -> list[str]:
     errors: list[str] = []
     if not root.is_dir():
         return [f"{root}: assets/testcases directory is missing"]
+    errors.extend(_check_trace_links(root))
 
     index = root / "README.md"
     if not index.is_file():
@@ -47,8 +50,52 @@ def validate_tree(root: Path) -> list[str]:
             errors.append(f"{_rel(index)}: module table must mention {module.name}")
         errors.extend(_check_module(module, seen, prefixes))
     for path in root.iterdir():
-        if path.is_file() and path.name != "README.md":
-            errors.append(f"{_rel(path)}: only README.md belongs at the testcases root")
+        if path.is_file() and path.name not in ROOT_FILES:
+            errors.append(f"{_rel(path)}: only README.md and CHANGELOG.md belong at the testcases root")
+    return errors
+
+
+def _check_trace_links(root: Path) -> list[str]:
+    """Optional ``requirements`` / ``data`` front-matter fields must point at real things.
+
+    ``root`` is ``<workspace>/assets/testcases``; requirements live in
+    ``<workspace>/knowledge/requirements/<REQ-ID>.md``, data files under ``<workspace>/data/``.
+    """
+    workspace = root.parent.parent
+    req_dir = workspace / "knowledge" / "requirements"
+    errors: list[str] = []
+    for path in sorted(root.rglob("*.md")):
+        if path.name in ROOT_FILES:
+            continue
+        meta = parse_front_matter(path.read_text(encoding="utf-8"))
+        if meta.get("kind") != "testcase":
+            continue
+        rel = _rel(path)
+        reqs = meta.get("requirements")
+        if reqs is not None:
+            if not isinstance(reqs, list) or not all(isinstance(r, str) for r in reqs):
+                errors.append(f"{rel}: requirements must be a list of REQ-… ids")
+            else:
+                for req in reqs:
+                    if not REQ_ID.match(req):
+                        errors.append(f"{rel}: requirement id {req!r} must look like REQ-<slug>")
+                    elif req_dir.is_dir() and not (req_dir / f"{req}.md").is_file():
+                        errors.append(f"{rel}: requirement {req} not found in knowledge/requirements/")
+        data = meta.get("data")
+        if data is not None:
+            if not isinstance(data, list) or not all(isinstance(d, str) for d in data):
+                errors.append(f"{rel}: data must be a list of data/… paths or account:<id>")
+                continue
+            for ref in data:
+                if ref.startswith("account:"):
+                    if not ref.split(":", 1)[1].strip():
+                        errors.append(f"{rel}: data entry {ref!r} needs an account id")
+                elif not ref.startswith("data/"):
+                    errors.append(f"{rel}: data entry {ref!r} must start with data/ or account:")
+                elif ".local." in ref:
+                    errors.append(f"{rel}: data entry {ref!r} points at a local secret file")
+                elif not (workspace / ref).exists():
+                    errors.append(f"{rel}: data file {ref} does not exist")
     return errors
 
 

@@ -1,0 +1,30 @@
+---
+description: knowledge/ is SUT knowledge (ddl, raw originals, LLM-maintained wiki, requirements, defects) that evolves with the SUT; raw is read-only, wiki claims need a source, units bump version and libraries keep a changelog
+globs: knowledge/**
+alwaysApply: false
+version: 1.0.0
+---
+
+# knowledge — 知识层硬约束
+
+`knowledge/` 装被测系统的知识，随被测系统演进，不随测试工作演进。规范见 `docs/spec/knowledge-syntax.md`。
+
+## 分区
+
+- `ddl/`：自动区，`tuner-dump-ddl` 生成并写 `knowledge/ddl/CHANGELOG.md`。人不手改。
+- `raw/`：原件（需求文档、OpenAPI、纪要、导出）。**只读**：不改写语义、不删改内容。
+- `wiki/`：LLM 维护（skill `maintain-wiki`）。先读 `wiki/index.md` 再下钻；新页登记进 `index.md`；每次 ingest / lint 在 `wiki/log.md` 追加一行。
+- `requirements/<REQ-ID>.md`：一条需求一个文件，`maintain-wiki` 从原件拆出。
+- `defects/<DEF-ID>.md`：一个缺陷一个文件，固定模板（`docs/spec/defect-syntax.md`，规则 `defects.mdc`），`maintain-defectlib` 记录。
+
+## 必须
+
+- wiki 主张、需求、缺陷都有 `source`（原件、需求 ID、测试单或 evidence）；explore / design 填 `evidence`。
+- 改单元 bump `version`；每次维护 `tuner-workspace changelog append --area <wiki|requirements|defects> …`。
+- 「在哪、用什么」（源码路径、API 文档地址、日志通道）写 config（`maintain-config`），wiki 只解释、引用键名。
+
+## 禁止
+
+- 写入密码、token、Cookie、Authorization；在 wiki 里重复 config 的地址与密钥。
+- 凭空编造表名、字段、业务规则。
+- 把测试资产（用例、测试单、报告、测试设计）放进 `knowledge/`：放 `assets/`。

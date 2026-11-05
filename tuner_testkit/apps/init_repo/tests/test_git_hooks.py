@@ -92,5 +92,10 @@ def test_validate_commit_msg_scope_coverage(tmp_path: Path) -> None:
         os.environ["TUNER_COMMIT_STAGED"] = "work/tasks/TASK-20260924-001.md"
         msg.write_text("feat(work): record order test task\n", encoding="utf-8")
         assert validate.main(["x", str(msg)]) == 0
+        os.environ["TUNER_COMMIT_STAGED"] = "knowledge/requirements/REQ-a.md\nassets/testcases/m/s/X.md"
+        msg.write_text("feat(knowledge): ingest PRD\n", encoding="utf-8")
+        assert validate.main(["x", str(msg)]) == 1  # assets layer not covered
+        msg.write_text("feat(knowledge,assets): ingest PRD and add cases\n", encoding="utf-8")
+        assert validate.main(["x", str(msg)]) == 0
     finally:
         os.environ.pop("TUNER_COMMIT_STAGED", None)

@@ -44,6 +44,33 @@
 
 ---
 
+## 2026-11-04 — tuner-testkit 7.0.0（TestPilot：知识层、配置、端口、可用性）
+
+- **commit**: `TBD`
+- **来源**: `testpilot框架设计.excalidraw` 心智模型与 6.3.0 实现的对照评价（vault `raw/projects/testpilot/`）
+- **目的**: 让仓库同时约束 AI 的行为、承载测试工程师的全部工作信息：被测系统知识与测试资产分层；配置成为「在哪、用什么」的唯一来源；
+  差异化能力（后端日志）只定端口契约、由 workspace 自定义 app 实现；缺陷像用例一样有固定目录、模板与校验；补齐体检、升级、配置三个可用性入口；
+  对外 skill 收敛成知识 / 动作 / 可用性三组；下游拿到的 DNA 不再含平台专属内容。产品名统一为 TestPilot（发行名、导入名、命令不变）。
+- **路径**:
+  - `tuner_testkit/apps/dna/**`（`PLATFORM_ONLY_PATHS`、平台块剔除、`.tuner-dna.json`、`sync --prune`、`check --json`）
+  - `tuner_testkit/config.py`、`tuner_testkit/config_schema.py`（`show --json`、`validate`、`OPS / PORTS / CHANNELS / KNOWLEDGE`）
+  - `tuner_testkit/ports.py`、`tuner_testkit/tools/manifest.py`（`port` 字段）
+  - `tuner_testkit/defects/**`（缺陷库 `check` / `new` / `next-id`）；`docs/spec/defect-syntax.md`；`.cursor/rules/defects.mdc`
+  - `tuner_testkit/workspace/{changelog,doctor,migrate,index_render,cli}.py`、`tuner_testkit/catalog/scan.py`、`tuner_testkit/project.py`
+  - `tuner_testkit/apps/openapi_import/**`（`tuner-openapi-import`）、`tuner_testkit/apps/dump_ddl.py`、`tuner_testkit/apps/testreport/cli.py`、`tuner_testkit/apps/task/**`
+  - `tuner_testkit/apps/_shared/changelog.py`、`tuner_testkit/testcases/validate.py`、`tuner_testkit/apps/index_ai/registry.py`、`tuner_testkit/workbench/templates/ai.html`
+  - `tuner_testkit/apps/init_repo/scaffold.py`、`stubs/**`（`knowledge/`、`config/env_local.py.example`、`INDEX.project.md` 0.2.0）
+  - `tools/git-hooks/{pre-commit,pre-push,validate_commit_msg.py}`
+  - `AGENTS.md` 2.0.0；`docs/spec/{knowledge-syntax,config-syntax,ports,data-syntax,browser-channel}.md`（新）及多份 spec 更新
+  - `.cursor/rules/**`（新增 `knowledge`、`config`）、`.cursor/skills/**`（新增 8 个、删除 `init-content`、全部加 `group`）、`.cursor/agents/**`
+  - `dogfood/**`（迁到 `knowledge/`、`apps/sample_log_source` 参考适配器、`PORTS` 绑定）
+  - `pyproject.toml` `[tool.ruff]`（钉 0.17.3，规则 E4 / E7 / E9 / F / B / BLE）、`.github/workflows/ci.yml`；按规则修复既有代码：
+    删除未用导入与无占位 f-string、`normalize.py` 里被覆盖的重复 `skip_api_flow`、`client.py` 未用变量；`zip(strict=True)`；
+    `DbClient` 健康检查只捕获 `SQLAlchemyError`、`ApiResponse` 解析只捕获 `ValueError` / 解码错误；其余宽泛 except 补 `noqa: BLE001` 理由
+- **不在同步范围**: 下游业务数据；下游需按 `TEMPLATE-7.0.0.md` 迁移布局与 `config/env.py`
+- **验证**: `uv run pytest`；`uv run --directory dogfood pytest`；`uv run --directory dogfood behave --stage api --tags "@offline" --tags "~@wip"`；
+  `tuner-index-ai --check`；`manifest --check`；临时目录 `tuner-init scaffold` → `tuner-dna check` → `tuner-workspace doctor`
+
 ## 2026-10-29 — tuner-testkit 6.3.0（测试单出 GJB438B 测试报告）
 
 - **commit**: `5f13876`

@@ -16,8 +16,8 @@ tuner-task ask --task TASK-20260924-001 --topic sut-log-source \
   --prompt "仓库没有写明后端日志从哪取"
 
 tuner-task answer Q-20260924-001 --option rancher-api \
-  --note "命名空间见 env_local 的 LOG_SOURCE" \
-  --curate assets/domain-notes/order/log-source.md
+  --note "命名空间见 env_local 的 OPS.rancher" \
+  --curate knowledge/wiki/domain-notes/order/log-source.md
 
 tuner-task bind TASK-20260924-001 --output assets/testdesign/order/create.md \
   --evidence artifacts/evidence/20260924T000000Z-order/
@@ -27,6 +27,9 @@ tuner-task validate assets/testdesign/order/create.md
 ```
 
 `sut-log-source` 的选项是 `ssh-dir`、`log-api`、`rancher-api`、`skip`。
+后端日志是 `log-source` 端口（`docs/spec/ports.md`）：kit 不实现取日志。回答 `sut-log-source` 后，`answer` 的 JSON 带 `next`：
+用 `create-app` 按端口契约在 workspace `apps/` 写适配器，用 `maintain-config` 在 config `PORTS` / `OPS` 绑定。
+`--curate` 只接受 `knowledge/wiki/domain-notes/**/*.md`（pre-7.0 布局仍接受 `assets/domain-notes/`）。
 `--note` 里出现 `token:`、`password=` 或 `Bearer …` 时命令失败。
 
 stdout 是一行 JSON。

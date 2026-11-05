@@ -11,7 +11,7 @@ import pathlib
 import re
 from dataclasses import dataclass
 
-from tuner_testkit.apps.dna.paths import DNA_PATHS
+from tuner_testkit.apps.dna.paths import DNA_PATHS, is_platform_only
 
 MANIFEST_PATH = pathlib.Path(__file__).resolve().parent / "release_manifest.json"
 
@@ -46,11 +46,13 @@ def read_template_version(root: pathlib.Path | None = None) -> str:
 
 
 def _iter_files(root: pathlib.Path) -> list[pathlib.Path]:
+    """Files that ship as DNA: platform-only paths (e.g. FRAMEWORK.md) are not hashed."""
     files: list[pathlib.Path] = []
     for rel in PLATFORM_PATHS:
         target = root / rel
         if target.is_file():
-            files.append(target)
+            if not is_platform_only(rel):
+                files.append(target)
         elif target.is_dir():
             for path in target.rglob("*"):
                 if not path.is_file():
@@ -58,6 +60,8 @@ def _iter_files(root: pathlib.Path) -> list[pathlib.Path]:
                 if any(part in _EXCLUDE_PARTS for part in path.parts):
                     continue
                 if path.suffix in _EXCLUDE_SUFFIXES or path.name in _EXCLUDE_NAMES:
+                    continue
+                if is_platform_only(path.relative_to(root).as_posix()):
                     continue
                 files.append(path)
     return sorted(set(files))

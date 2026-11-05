@@ -1,12 +1,20 @@
 # 复制为 config/env_local.py（该文件已被 gitignore，勿提交）后填入本机真实值。
-# env_local 只放密钥与真实 host；项目多出来的数据源别名请提交到 config/env_overlay.py。
-# type 可写 mysql / sqlserver / postgres；不写则沿用 env.py / env_overlay 的 type。
+# env_local 只放密钥、真实 host 与本机路径；团队约定（新数据源别名、PORTS 绑定）请提交到
+# config/env.py 或 config/env_overlay.py。字段说明见 docs/spec/config-syntax.md。
+# 改完跑：tuner-config validate；LLM 读配置只用：tuner-config show --json（密钥打码）。
 #
-# 多套环境：把每套 url+db+account 放进 ENVIRONMENTS，用下面任一方式激活一套：
-#   python -m tuner_testkit.config use dev     # 写入 config/.active_env（仓库全局）
+# 多套环境：把每套 url + db + account + ops 放进 ENVIRONMENTS，用下面任一方式激活一套：
+#   tuner-config use dev                       # 写入 config/.active_env（仓库全局）
 #   set TUNER_ENV=uat                          # 仅当前进程，不改指针
 #   ACTIVE_ENV = "dev"                         # 尚未 use 过时的默认
-# 只要 ENVIRONMENTS 非空，就只套用激活那一套（忽略本文件顶层 DATABASES / TEST_*）。
+# 只要 ENVIRONMENTS 非空，就只套用激活那一套的 DATABASES / TEST_* / OPS；
+# 顶层的 CHANNELS / PORTS / KNOWLEDGE 对本机所有环境生效。
+
+# ---- 本机 workspace 级覆盖（可选） ----------------------------------------------
+# CHANNELS = {"browser": "cursor-browser"}          # 本机改用 Cursor 浏览器
+KNOWLEDGE = {
+    "source_roots": [],                               # 例如 ["D:/src/acme-backend"]
+}
 
 ACTIVE_ENV = "dev"
 
@@ -21,11 +29,17 @@ ENVIRONMENTS = {
                 "database": "example",
             },
         },
+        "TEST_UI_BASE_URL": "http://127.0.0.1:3000",
         "TEST_BASE_URL": "http://127.0.0.1:8080",
         "TEST_ACCOUNT": {
             "username": "admin",
             "password": "CHANGE_ME",
         },
+        # 运维通道：只给端口适配器读（如 log-source），键名由适配器 README 约定。
+        # "OPS": {
+        #     "ssh": {"host": "10.0.0.5", "user": "deploy", "password": "CHANGE_ME", "log_dir": "/var/log/app"},
+        #     "rancher": {"url": "https://rancher.example", "token": "CHANGE_ME", "namespace": "acme-dev"},
+        # },
     },
     "uat": {
         "DATABASES": {
@@ -37,13 +51,14 @@ ENVIRONMENTS = {
                 "database": "example_uat",
             },
         },
+        "TEST_UI_BASE_URL": "http://127.0.0.1:3001",
         "TEST_BASE_URL": "http://127.0.0.1:8081",
         "TEST_ACCOUNT": {
             "username": "admin",
             "password": "CHANGE_ME",
         },
     },
-    # PostgreSQL 示例（Plane 本地：宿主机 127.0.0.1:5432，不要用容器名 plane-db）：
+    # PostgreSQL 示例（宿主机 127.0.0.1:5432，不要用容器名）：
     # "plane": {
     #     "DATABASES": {
     #         "main": {
@@ -61,14 +76,6 @@ ENVIRONMENTS = {
 }
 
 # 无 ENVIRONMENTS 时可用旧扁平写法（与上面二选一即可）：
-# DATABASES = {
-#     "main": {
-#         "host": "127.0.0.1",
-#         "port": 3306,
-#         "user": "root",
-#         "password": "CHANGE_ME",
-#         "database": "example",
-#     },
-# }
+# DATABASES = {"main": {"host": "127.0.0.1", "port": 3306, "user": "root", "password": "CHANGE_ME", "database": "example"}}
 # TEST_BASE_URL = "http://127.0.0.1:8080"
 # TEST_ACCOUNT = {"username": "admin", "password": "CHANGE_ME"}

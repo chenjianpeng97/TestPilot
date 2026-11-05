@@ -428,7 +428,7 @@ def compose(
     for lvl in [*LEVELS, *(row["level"] for row in extra)]:
         row = by_level.get(lvl, {"types": {}, "closed": 0, "open": 0})
         counts = [row["types"].get(name, 0) for name, _ in TYPE_COLUMNS]
-        for (name, _), n in zip(TYPE_COLUMNS, counts):
+        for (name, _), n in zip(TYPE_COLUMNS, counts, strict=True):
             totals[name] += n
         matrix.append([lvl, *counts, row["closed"], row["open"]])
     matrix.append(["合计", *totals.values(), defects["closed"], defects["open"]])

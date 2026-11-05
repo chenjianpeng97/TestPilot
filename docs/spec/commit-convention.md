@@ -1,6 +1,6 @@
 # 提交规范（commit-convention）— 单一事实源
 
-> 采用 **Conventional Commits**，并用一套**对齐六层与资产类别的 scope**，让每次提交
+> 采用 **Conventional Commits**，并用一套**对齐分层与资产类别的 scope**，让每次提交
 > 一眼看出"改了什么层/什么资产"。本文件是 type/scope 的唯一事实源，`commit-msg`
 > 校验脚本（`tools/git-hooks/`）与 `.cursor/rules/commit-convention.mdc` 都以此为准。
 
@@ -33,11 +33,12 @@
 | `style` | 纯格式 |
 | `revert` | 回滚 |
 
-## 3. scope（对齐六层与资产类别）
+## 3. scope（对齐分层与资产类别）
 
 | scope | 对应路径 | 典型场景 |
 | --- | --- | --- |
-| `assets` | `assets/**` | 更新 DDL/用例/业务 SQL/报告 |
+| `knowledge` | `knowledge/**` | 刷新 DDL、ingest 需求与 wiki、沉淀缺陷 |
+| `assets` | `assets/**` | 更新测试设计/用例/测试单/报告/业务 SQL |
 | `apps` | `apps/**`、`tuner_testkit/apps/**` | 新增/修改工具（SUT 私有 + kit CLI） |
 | `packages` | `packages/**`、`tuner_testkit/**`（通用运行库） | db/logging/api_test/excel/config |
 | `api_objects` | `packages/api_objects/**` | 录制/冻结接口资产 |
@@ -61,7 +62,8 @@
 
 ```text
 feat(api_objects): record login and checkout routes
-chore(assets): refresh order ddl via dump_ddl
+chore(knowledge): refresh order ddl via dump_ddl
+feat(knowledge,assets): ingest refund PRD and add refund cases
 feat(apps): add data export checker tool
 docs(spec): add apps-authoring-syntax
 chore(rules): scope bdd-pipeline-gates off always-apply

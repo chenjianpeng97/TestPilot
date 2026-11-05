@@ -1,0 +1,33 @@
+---
+description: Defects live one per file under knowledge/defects/DEF-<yyyymmdd>-<nnn>.md with a fixed front-matter, section order and history table; record and update them with maintain-defectlib and validate with python -m tuner_testkit.defects check
+globs: knowledge/defects/**
+alwaysApply: false
+version: 1.0.0
+---
+
+# defects — 缺陷库
+
+完整规范：`docs/spec/defect-syntax.md`。记录、回归、关闭走 skill `maintain-defectlib`。缺陷库就是缺陷的记录处，不是端口，不同步到别处。
+
+## 位置与编号
+
+- 一个缺陷一个文件：`knowledge/defects/DEF-<发现日期 yyyymmdd>-<nnn>.md`；目录里另外只允许 `CHANGELOG.md`、`README.md`。
+- 取号：`uv run python -m tuner_testkit.defects next-id`；建文件：`uv run python -m tuner_testkit.defects new …`（按固定模板生成）。
+- 同一缺陷跨轮次只更新原文件，不新开编号；编号不改、不复用；误报改 `关闭` 并在历史写原因，不删文件。
+
+## 文件
+
+- front-matter：`kind: defect`、`id`、`title`、`severity`（致命/严重/一般/轻微）、`type`（需求/设计/编码/文档/其它）、`status`（激活/已解决/关闭）、
+  `blocking`、`found`、`found_in`（测试单 `#D<n>` 或 `/`）、`testcase`（用例 ID 或 `/`）、可选 `requirements` / `sut_version` / `env`、`version`。
+- 一级标题 `# <id> <title>`；章节顺序：现象、环境、前置条件、复现步骤、预期结果、实际结果、证据、历史。现象、复现步骤（编号步骤）、预期结果、实际结果、历史必填。
+- 历史表 `| 日期 | 轮次 | 状态 | 说明 |`，一次状态变化一行，最后一行状态等于 `status`。
+
+## 留痕
+
+- 改文件 bump `version`；每次维护 `tuner-workspace changelog append --area defects …`；提交 scope `knowledge`。
+- 改完跑 `uv run python -m tuner_testkit.defects check`，有错就修。
+
+## 禁止
+
+- 密码、token、Cookie、Authorization；账号写 `account:<id>`；证据只写路径。
+- 把缺陷写进 `assets/`、测试单以外的临时文件，或只留在聊天里。

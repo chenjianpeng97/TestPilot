@@ -64,7 +64,7 @@ def log_name_stem() -> str:
         return override
     try:
         stem = Path(sys.argv[0]).stem if sys.argv and sys.argv[0] else ""
-    except Exception:
+    except (TypeError, ValueError):
         stem = ""
     # Normalise common launcher noise (``__main__``, ``-c``, empty).
     if not stem or stem in {"__main__", "-c"}:
@@ -193,7 +193,7 @@ def reset_for_tests() -> None:
             _logger.removeHandler(h)
             try:
                 h.close()
-            except Exception:
+            except Exception:  # noqa: BLE001 -- a broken handler must not stop reconfiguration
                 pass
         for f in list(_logger.filters):
             _logger.removeFilter(f)

@@ -1,7 +1,8 @@
 ---
 name: feature-review-lint
 version: 1.0.0
-description: Reviews and lints behave .feature files against behave-gerkin-syntax.md with actionable rewrite suggestions. Use when a feature is flaky/too long/too imperative, or before implementing steps. Do NOT use when the user explicitly requests pytest instead of behave/Gherkin.
+group: internal
+description: Internal step (usually reached via maintain-bdd-assets). Reviews and lints behave .feature files against behave-gerkin-syntax.md with actionable rewrite suggestions. Use when a feature is flaky/too long/too imperative, or before implementing steps. Do NOT use when the user explicitly requests pytest instead of behave/Gherkin.
 ---
 
 # Feature Review / Lint

@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass, field
 from email import message_from_bytes
 from email.policy import HTTP
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 from urllib.parse import parse_qsl
 
 from .normalize import DEFAULT_TOOL, body_keys, fingerprint, normalize_path, schema_from_mapping, split_url
@@ -71,7 +71,7 @@ def _parse_multipart(
     )
     try:
         msg = message_from_bytes(envelope, policy=HTTP)
-    except Exception:
+    except Exception:  # noqa: BLE001 -- a malformed multipart body is frozen without fields, never breaks capture
         return {}, {}, "none"
 
     text_fields: dict[str, Any] = {}

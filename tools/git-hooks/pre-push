@@ -1,7 +1,8 @@
 #!/bin/sh
-# Warn (non-blocking) when common platform assets drifted from the release
-# manifest without a version bump. Enable with:
+# Warn (non-blocking) about DNA drift. Enable with:
 #   git config core.hooksPath tools/git-hooks
+# Platform repo: shared assets drifted from the release manifest without a version bump.
+# Workspace: project DNA differs from the installed tuner-testkit payload.
 DIR=$(dirname "$0")
 ROOT=$(cd "$DIR/../.." && pwd)
 # Prefer the repo venv (global `python` may be a Windows Store stub / missing).
@@ -16,7 +17,12 @@ elif command -v python >/dev/null 2>&1; then
 else
   exit 0
 fi
-# --check exits 1 on drift; we only warn, never block the push.
-( cd "$ROOT" && "$PY" -m tuner_testkit.apps.init_repo manifest --check ) || \
-  echo "[warn] pre-push: platform assets drifted; consider the release-template skill to bump version." >&2
+# Both checks exit 1 on drift; we only warn, never block the push.
+if [ -f "$ROOT/tuner_testkit/project.py" ]; then
+  ( cd "$ROOT" && "$PY" -m tuner_testkit.apps.init_repo manifest --check ) || \
+    echo "[warn] pre-push: platform assets drifted; consider the release-template skill to bump version." >&2
+else
+  ( cd "$ROOT" && "$PY" -m tuner_testkit.apps.dna check >/dev/null 2>&1 ) || \
+    echo "[warn] pre-push: project DNA differs from the installed kit; see the upgrade-framework skill." >&2
+fi
 exit 0

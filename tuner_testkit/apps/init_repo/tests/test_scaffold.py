@@ -53,6 +53,21 @@ def test_scaffold_from_non_project_cwd(tmp_path: Path, monkeypatch):
     assert (dest / "workbench.sh").is_file()
     assert (dest / ".cursor" / "REGISTRY.md").is_file()
     assert any(line.startswith("write .cursor/REGISTRY.md") for line in actions)
+    # 7.0 layout: knowledge layer, asset layer, tasks, run dirs, config template, workspace DNA view
+    for rel in ("knowledge/ddl", "knowledge/raw", "knowledge/wiki/domain-notes", "knowledge/requirements",
+                "knowledge/defects", "assets/testdesign", "assets/testcases", "work/tasks", "artifacts/runs",
+                "artifacts/reports"):
+        assert (dest / rel).is_dir(), rel
+    assert not (dest / "assets" / "ddl").exists()
+    assert (dest / "knowledge" / "wiki" / "index.md").is_file()
+    assert (dest / "config" / "env_local.py.example").is_file()
+    assert "CHANNELS" in (dest / "config" / "env.py").read_text(encoding="utf-8")
+    assert "role: admin" in (dest / "data" / "sut-accounts.example.yaml").read_text(encoding="utf-8")
+    assert "auto:begin:knowledge" in (dest / "INDEX.project.md").read_text(encoding="utf-8")
+    assert not (dest / ".cursor" / "skills" / "release-template").exists()
+    assert (dest / ".cursor" / "skills" / "health-check" / "SKILL.md").is_file()
+    assert "本仓不是 workspace" not in (dest / "AGENTS.md").read_text(encoding="utf-8")
+    assert (dest / ".tuner-dna.json").is_file()
 
 
 def test_scaffold_project_name_follows_folder(tmp_path: Path):

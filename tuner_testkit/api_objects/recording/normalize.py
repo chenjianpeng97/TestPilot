@@ -42,41 +42,6 @@ STATIC_EXTENSIONS = frozenset(
 SKIP_METHODS = frozenset({"OPTIONS", "HEAD", "CONNECT"})
 DEFAULT_TOOL = "recorder"
 
-DEFAULT_TOOL = "recorder"
-
-
-def skip_api_flow(
-    *,
-    method: str,
-    url: str,
-    request_content_type: str = "",
-    response_content_type: str = "",
-    include_host: str | None = None,
-) -> str | None:
-    """Return why this flow should not be frozen, or ``None`` to freeze it.
-
-    Reasons: ``method`` / ``host`` / ``static``. ``static`` also covers HTML
-    document GETs (SPA shells).
-    """
-    method_u = (method or "").upper()
-    if method_u in SKIP_METHODS:
-        return "method"
-    parts = urlsplit(url or "")
-    host = (parts.netloc or "").lower()
-    path = parts.path or "/"
-    needle = (include_host or "").strip().lower()
-    if needle and needle not in host:
-        return "host"
-    if is_static_request(
-        path=path,
-        content_type=request_content_type,
-        response_content_type=response_content_type,
-    ):
-        return "static"
-    if "text/html" in (response_content_type or "").lower() and method_u == "GET":
-        return "static"
-    return None
-
 
 def split_url(url: str) -> tuple[str, str, dict[str, str]]:
     """Return ``(host, path, query_dict)`` from a full URL."""

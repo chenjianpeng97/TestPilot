@@ -1,15 +1,26 @@
 ---
 name: generate-test-report
-description: Turn a regression run under artifacts/reports/<run_id>/ (plus inbox and optional design notes) into a curated Markdown test report at assets/testreport/<sut>/<yyyy-mm>/<slug>.md with metadata-conventions front-matter. Use when the user asks to 生成测试报告 / write a test report / 汇总回归结果.
-version: 1.1.0
+description: Single entry for test reports. Routes filled test sheets to the GJB438B flow (generate-testsheet-report, tuner-testreport docx), test-design click runs to run-test-execution, and turns a behave/pytest regression run under artifacts/reports/<run_id>/ into a curated Markdown report at assets/testreport/<sut>/<yyyy-mm>/<slug>.md. Use when the user asks to 生成测试报告 / 出报告 / write a test report / 汇总回归结果 / GJB438B.
+version: 1.2.0
+group: action
 ---
 
 # Generate Test Report
 
+## 路由（先判断报告的来源）
+
+| 来源 | 走哪 |
+| --- | --- |
+| 填好的测试单 `assets/testsheet/<轮次>/`，或用户要 GJB438B / docx | 读并遵循 `.cursor/skills/generate-testsheet-report/SKILL.md` |
+| 测试设计的端到端点击（`work/tasks` 的 `test-execution`） | 读并遵循 `.cursor/skills/run-test-execution/SKILL.md` |
+| behave / pytest 回归 `artifacts/reports/<run_id>/` | 本文件下面的步骤 |
+
+不确定时问用户报告基于哪一轮测试单或哪次回归。
+
 ## Scope
 
 - **Write**: `assets/testreport/<sut>/<yyyy-mm>/<slug>.md` only（策展知识，不是原始报告）。
-- **Read**: `artifacts/reports/<run_id>/manifest.json` + `summary.json`；可选 `artifacts/inbox/`、`assets/design/**`、`INDEX.project.md`。
+- **Read**: `artifacts/reports/<run_id>/manifest.json` + `summary.json`；可选 `artifacts/inbox/`、`knowledge/wiki/design/**`、`INDEX.project.md`。
 - **Must follow**: `docs/spec/metadata-conventions.md`、`docs/spec/artifacts-layout.md`、`docs/spec/assets-knowledge-syntax.md`。
 
 ## Steps
@@ -42,7 +53,7 @@ source: artifacts/reports/<run_id>
 ---
 ```
 
-5. 正文固定六个二级标题，缺信息写「无」而不是省略：
+5. 正文固定六个二级标题，缺信息写「无」而不是省略。「缺陷」节优先引用 `knowledge/defects/DEF-…`（有缺陷库时），「范围」节列出覆盖的需求 ID：
 
 ```markdown
 ## 范围

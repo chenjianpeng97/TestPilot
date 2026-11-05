@@ -6,7 +6,7 @@ import os
 import shutil
 from pathlib import Path
 
-from tuner_testkit.apps.dna.paths import DNA_PATHS
+from tuner_testkit.apps.dna.paths import DNA_PATHS, is_local_override, is_platform_only
 from tuner_testkit.project import template_source_root
 
 TUNER_DNA_ROOT_VAR = "TUNER_DNA_ROOT"
@@ -41,15 +41,27 @@ def dna_source_root() -> Path:
     )
 
 
-def iter_dna_files(source: Path | None = None) -> list[tuple[str, Path]]:
-    """Return (relative posix path, absolute file path) for every DNA file."""
+def iter_dna_files(source: Path | None = None, *, include_platform_only: bool = False) -> list[tuple[str, Path]]:
+    """Return (relative posix path, absolute file path) for every workspace DNA file.
+
+    Platform-only paths and local-override files are skipped unless
+    ``include_platform_only`` is set (the release manifest hashes the full tree).
+    """
     root = source or dna_source_root()
     skip = {"__pycache__", ".pytest_cache"}
     found: list[tuple[str, Path]] = []
+
+    def _keep(rel_path: str) -> bool:
+        if is_local_override(rel_path):
+            return False
+        return include_platform_only or not is_platform_only(rel_path)
+
     for rel in DNA_PATHS:
         target = root / rel
         if target.is_file():
-            found.append((rel.replace("\\", "/"), target))
+            rel_path = rel.replace("\\", "/")
+            if _keep(rel_path):
+                found.append((rel_path, target))
             continue
         if not target.is_dir():
             continue
@@ -59,7 +71,8 @@ def iter_dna_files(source: Path | None = None) -> list[tuple[str, Path]]:
             if any(part in skip for part in path.parts):
                 continue
             rel_path = path.relative_to(root).as_posix()
-            found.append((rel_path, path))
+            if _keep(rel_path):
+                found.append((rel_path, path))
     found.sort(key=lambda item: item[0])
     return found
 

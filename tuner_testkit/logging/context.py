@@ -44,7 +44,7 @@ class LogContext:
 
 
 _current: contextvars.ContextVar[LogContext] = contextvars.ContextVar(
-    "log_context", default=LogContext()
+    "log_context", default=LogContext()  # noqa: B039 -- LogContext is a frozen dataclass
 )
 
 

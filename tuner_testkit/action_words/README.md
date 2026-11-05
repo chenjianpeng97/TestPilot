@@ -127,7 +127,7 @@ class CreateExample(ActionWord):
 
 1. **先查重**：`uv run python -m tuner_testkit.action_words list`；
 2. 选类别与 `word_id`，在对应类别子包下建模块；
-3. 造数类先写纯构建函数再落库；列名以 `assets/ddl/<table>.sql` 为准；
+3. 造数类先写纯构建函数再落库；列名以 `knowledge/ddl/<table>.sql` 为准；
 4. 验证：
 
 ```bash

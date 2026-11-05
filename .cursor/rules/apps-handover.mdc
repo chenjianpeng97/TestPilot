@@ -1,8 +1,8 @@
 ---
-description: When an apps/ or tuner_testkit.apps tool is created or changed, it must ship a handover doc (requirement background, trial scenarios, run method, run example) and be registered in INDEX.md
+description: When an apps/ or tuner_testkit.apps tool is created or changed, it must ship a handover doc (requirement background, trial scenarios, run method, run example) and be registered in the index
 globs: apps/**,tuner_testkit/apps/**
 alwaysApply: false
-version: 1.1.0
+version: 1.2.0
 ---
 
 # apps — 完成期交接纪律
@@ -19,10 +19,15 @@ version: 1.1.0
 - **运行方式**：完整命令，含依赖安装（如 `uv sync --extra <extra>`）。
 - **运行示例**：一条可复制命令 + 预期产出位置。
 
+- **端口适配器**另写：实现哪个端口、读 config `OPS` 的哪些键（只写键名，不写值）、通道不可用时的退出码。
+
 ## 索引登记
 
-- 在根 `INDEX.md` 第 3 节登记该工具一行（工具 / 运行 / 用途 / 交接文档链接）。
-- 删除/重命名工具时同步更新 `INDEX.md` 与相关引用。
+- workspace 工具：带 `tool.py` 的由 `tuner-workspace index render` 写进 `INDEX.project.md` 第 3 节（端口适配器进 3.1）；改完跑一次。
+- 删除/重命名工具时同步更新索引、config `PORTS` 与相关引用。
+<!-- platform-only:begin -->
+- 平台工具（`tuner_testkit/apps/`）：在根 `INDEX.md` 第 3 节手工登记一行（工具 / 运行 / 用途 / 交接文档链接）。
+<!-- platform-only:end -->
 
 ## 检查
 

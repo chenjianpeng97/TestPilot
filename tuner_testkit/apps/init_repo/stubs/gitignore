@@ -29,7 +29,8 @@ data/**/*.local.yaml
 data/**/*.local.json
 data/**/*.local.md
 
-# DNA overlay pointer written by tuner-dna sync
+# Legacy DNA version pointer. Commit .tuner-dna.json (sync record): it lets the
+# next `tuner-dna sync` tell untouched DNA files from local edits.
 .tuner-dna-version
 
 # Playwright MCP session dumps

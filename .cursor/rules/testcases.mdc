@@ -1,8 +1,8 @@
 ---
-description: Functional testcases live one case per file under assets/testcases/<module>/<suite>/<Case-ID>.md; suite notes live in that folder's README
+description: Functional testcases live one case per file under assets/testcases/<module>/<suite>/<Case-ID>.md; suite notes live in that folder's README; cases trace to knowledge/requirements and keep a library changelog
 globs: assets/testcases/**
 alwaysApply: false
-version: 1.4.0
+version: 1.5.0
 ---
 
 # testcases — 功能用例集
@@ -11,22 +11,28 @@ version: 1.4.0
 
 ## 位置
 
-- 总索引：`assets/testcases/README.md`
+- 总索引：`assets/testcases/README.md`；维护流水：`assets/testcases/CHANGELOG.md`（根目录只允许这两个文件）
 - 模块说明：`assets/testcases/<模块>/README.md`
 - 一个套件一个目录：`assets/testcases/<模块>/<套件>/README.md`
 - 一条用例一个文件：`assets/testcases/<模块>/<套件>/<用例ID>.md`
-- 不要写到 `usecases/`、`testdesign/` 或 `tests/features/`。
+- 不要写到 `knowledge/wiki/usecases/`、`assets/testdesign/` 或 `tests/features/`。
 
 ## 用例文件
 
 - 文件名等于 `id`。一级标题是 `<id> <title>`。
 - `type` 为 `正向` 或 `反向`。`status` 为 `就绪` 或 `废弃`。`execution` 为 `手工` 或 `自动`。
 - `stages` 可选，非空列表，元素为 `冒烟` 或 `系统测试`；表示应在哪些测试阶段执行。
+- `requirements` 列出覆盖的需求 ID（`REQ-…`，文件在 `knowledge/requirements/`）；`data` 列出 `data/<path>` 或 `account:<id>`。
 - `## 步骤` 从 `### 1` 连续编号。每步有 `- 操作：` 和 `- 预期：`。
 - 套件级、不属于单条用例的说明写在套件 README 的 `## 详情`。
 - ID 形如 `User-Login-valid-credentials`：`id_prefix` 加小写 kebab-case slug（2–5 个词）。全库唯一；不改、不复用。删除一条不改其余 ID。
 
+## 留痕
+
+- 改用例 bump 该文件 `version`；增删用例 bump 套件 README。
+- 每次维护 `tuner-workspace changelog append --area testcases …`，和改动同一个提交。
+
 ## 禁止
 
-- 密码、token、Cookie、Authorization。账号只写 `account_id`。
-- 没有出处的业务规则。出处是用户本次说明，或索引能指向的知识。
+- 密码、token、Cookie、Authorization。账号只写 `account:<id>`。
+- 没有出处的业务规则。出处是用户本次说明，或 `INDEX.project.md` 能指向的需求与 wiki。

@@ -1,14 +1,15 @@
 ---
 name: artifacts-layout
-version: 1.0.0
+version: 1.1.0
 description: 交付物目录 artifacts/ 的子目录职责、run 级 manifest.json 契约、与 assets/testreport 的边界。
 ---
 
 # artifacts 交付物规范（artifacts-layout）
 
-> `artifacts/` 是 workspace 的**运行产出与交付物**目录：工具运行、回归报告、探索证据、agent 任务记录、catalog。
+> `artifacts/` 是 workspace 的**本机运行产出**目录：工具运行、回归报告、探索证据、agent 任务记录、catalog。全部 gitignore。
 > 它是唯一的同步边界——本地工作台读它，将来 `tuner-publish` 从它往企业平台送。
-> 知识层 `assets/`（含 `assets/testreport/`）放**人工策展后**的内容；`artifacts/` 放**原始产出**。
+> 入库的内容在资产层 `assets/`（含整理后的 `assets/testreport/`）与知识层 `knowledge/`；
+> 维护过程的追溯靠被维护对象自己的 changelog（`metadata-conventions.md` §4），不靠 inbox。
 
 ## 1. 目录
 
@@ -69,7 +70,8 @@ artifacts/
 | behave（`*_environment.py` 钩子） | `reports/<run_id>/` | `summary.json`（feature/scenario 状态）、`manifest.json`；`-f html-pretty -o $TUNER_REPORT_DIR/report.html` 时 html 同目录 |
 | pytest | `reports/<run_id>/` | `pytest --junitxml artifacts/reports/<run_id>/junit.xml`，再 `tuner_testkit.artifacts.finish_run` 写 manifest |
 | `tuner-evidence persist` / `attach` | `evidence/<run_id>/` | `network.jsonl` / `actions.jsonl` / `run_summary.md` / `screenshots/` / `logs/` / `api/`；`manifest.params.task_id` 指向 `work/tasks` |
-| agent（编排） | `inbox/` | 会话流水见 `agent-task-log.md`；未回答提问见 `inbox/questions/`，已回答见 `inbox/archived-question/` |
+| agent（`.cursor/agents/*` 编排） | `inbox/` | 会话流水见 `agent-task-log.md`（只有 agent 必须写；skill 写对象 changelog）；未回答提问见 `inbox/questions/`，已回答见 `inbox/archived-question/` |
+| 端口适配器（如 `log-source`） | `evidence/<run_id>/logs/` | 适配器 `--out` 写脱敏日志，再 `tuner-evidence attach --log` 挂到任务 |
 | `tuner-workspace catalog` | `catalogs/workspace.json` | 见 `tuner_testkit/workspace/README.md` |
 
 环境变量 `TUNER_REPORT_DIR` 指定本次回归的 run 目录（不设则钩子自动生成 `reports/<run_id>/`）；
@@ -89,7 +91,7 @@ artifacts/
 | `artifacts_playwright` | `artifacts/playwright` | — |
 | `artifacts_page_test` | `artifacts/page_test` | `PAGE_TEST_ARTIFACTS_DIR` |
 
-## 5. 与知识层的边界
+## 5. 与资产层、知识层的边界
 
 - `artifacts/reports/<run_id>/` 是**原始交付物**；人工或 `generate-test-report` skill 整理后的报告落
   `assets/testreport/<sut>/<yyyy-mm>/<slug>.md`，front-matter 用 `evidence: [artifacts/reports/<run_id>]` 指回来源。

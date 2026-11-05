@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import pathlib
-import sys
 
 from tuner_testkit.logging import log_info, log_warn
 from tuner_testkit.project import ensure_project_on_path, page_objects_dir

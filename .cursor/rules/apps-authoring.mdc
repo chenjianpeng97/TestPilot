@@ -2,7 +2,7 @@
 description: SUT apps/ and kit tuner_testkit.apps tools must be standalone-runnable and reuse tuner_testkit plus this repo's packages business assets; no reinventing wheels, no secrets, not imported by tests
 globs: apps/**,tuner_testkit/apps/**
 alwaysApply: false
-version: 2.0.1
+version: 2.1.0
 ---
 
 # apps — 创建期约束
@@ -18,12 +18,21 @@ version: 2.0.1
 - **复用 kit 运行库 + 本仓业务资产，不重造轮子**：
   - DB → `tuner_testkit.db.DbClient`（禁止直连驱动 / 硬编码 DSN / SQL 拼接）。
   - 日志 → `tuner_testkit.logging`（禁止 `print` / stdlib logging / 自建日志文件）。
-  - 配置凭据 → `config/env.py`（`tuner_testkit.config` 解析激活环境）+ 环境变量覆盖（不写死）。
+  - 配置凭据 → `config/env.py`（`tuner_testkit.config` 解析激活环境）+ 环境变量覆盖（不写死）；运维通道读 `load_project_env().OPS`。
   - HTTP/表格 → `tuner_testkit.api_test` / `packages.api_objects` / `tuner_testkit.excel`。
-- **产出去向**：原始知识回填 `assets/`；可复用资源落 `packages/`。
-- **自动区留痕**：覆盖式生成 `assets/**`、`packages/api_objects/**` 或
-  `packages/page_objects/**` 的工具，运行结束必须
-  调用 `tuner_testkit.apps._shared.changelog.append_entry(...)` 追加该区 `CHANGELOG.md`（供 `maintain-index`）。scaffold 不会带 `apps/_shared`。
+- **产出去向**：原始知识回填 `knowledge/`；可复用资源落 `packages/`。
+- **自动区留痕**：覆盖式生成 `knowledge/**`、`assets/**`、`packages/api_objects/**` 或
+  `packages/page_objects/**` 的工具，运行结束必须向该库 changelog 追加一行
+  （`tuner_testkit.apps._shared.changelog.append_entry(...)` 或 `tuner-workspace changelog append`）。scaffold 不会带 `apps/_shared`。
+
+## 端口适配器（鼓励自定义 apps）
+
+- 团队差异大的能力（后端日志、Rancher 操作）kit 只给端口契约（`docs/spec/ports.md`），**实现写在本仓 `apps/`**。
+  缺陷、用例、需求不是端口：它们有固定目录与模板，用对应的 maintain-* skill 记录。
+- 适配器的 `tool.py` 用 `@tool(..., port="<端口>")` 声明；参数与 `--json` 输出按契约；通道地址与密钥读 config `OPS`；输出前脱敏。
+- 只读端口（`log-source`）不得标 `destructive`；会写外部系统的端口标 `destructive=True` 且默认 dry-run。
+- 通道未经人确认（`tuner-task ask` 未答）前不写适配器。写完由 `maintain-config` 在 `PORTS` 绑定。
+- 端口适配器不进 `tuner_testkit/`。
 
 ## 禁止
 

@@ -1,6 +1,6 @@
 ---
 name: bdd-asset-pipeline
-version: 2.0.1
+version: 2.1.0
 description: Lower-half of SUT self-learning — Feature Sets + design knowledge → Reuse Analysis → Freeze API Objects → Maintain Page Objects → Maintain Steps → behave regression. Use only for behave/BDD automation assets. Do NOT use when the user explicitly requests pytest. Do NOT use this agent as the explore-first entry; start from docs/spec/sut-self-learning.md instead.
 ---
 
@@ -11,7 +11,7 @@ description: Lower-half of SUT self-learning — Feature Sets + design knowledge
 Coordinate the **lower half** of SUT self-learning once a feature-set entry
 and (when available) design knowledge exist:
 
-Feature Set item + `assets/design/**` → (optional MCP re-run) → Reuse vs
+Feature Set item + `knowledge/wiki/design/**` → (optional MCP re-run) → Reuse vs
 Create → Freeze API Objects → Update Page Objects → Implement Steps →
 Regression run → Report.
 
@@ -19,6 +19,13 @@ The **upper half** (explore SUT → capability map + design knowledge) is
 specified in `docs/spec/sut-self-learning.md`. Do not start this agent
 when the task is still "learn the SUT / explore pages" with no feature
 intent yet.
+
+The user-facing entry is the `maintain-bdd-assets` skill; it routes here.
+Scenarios trace to `knowledge/requirements/` (tag `@REQ-<slug>` where known).
+Each library this run touches (`packages/api_objects`, `page_objects`,
+`action_words`) gets its changelog line (`docs/spec/metadata-conventions.md` §4)
+in addition to this agent's `artifacts/inbox/` task log. Browser actions use
+the configured channel (`CHANNELS.browser`, `docs/spec/browser-channel.md`).
 
 ## Applicability
 
@@ -30,8 +37,8 @@ intent yet.
 ## Inputs (required)
 
 - At least one feature-set entry (a `.feature` to write/update, or a
-  scenario intent grounded in `assets/explore/**` / `assets/usecases/**`).
-- Prefer also: matching `assets/design/<app>/<route-slug>.md` so assertions
+  scenario intent grounded in `knowledge/wiki/explore/**` / `knowledge/wiki/usecases/**`).
+- Prefer also: matching `knowledge/wiki/design/<app>/<route-slug>.md` so assertions
   know which tables to check and which to skip as `noise`.
 
 ## Non-negotiable workflow contract (hard gates)
@@ -56,7 +63,7 @@ Same three gates as `.cursor/rules/bdd-pipeline-gates.mdc` v3:
 6. **Maintain UI assets** — `maintain-page-objects`
 7. **Implement/repair behave steps** — `maintain-behave-steps`
 
-Before writing Then-assertions, **read `assets/design/**`**:
+Before writing Then-assertions, **read `knowledge/wiki/design/**`**:
 
 - Assert `writes` (business tables) via `db_assert` / API extracts.
 - Never assert `noise` tables (audit / operation_log) as business outcomes.

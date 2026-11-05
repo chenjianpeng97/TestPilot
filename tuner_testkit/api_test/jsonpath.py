@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Union
+from typing import Any, List, Union
 
 
 class JsonPathError(ValueError):

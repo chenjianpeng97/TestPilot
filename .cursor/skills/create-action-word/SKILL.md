@@ -1,6 +1,7 @@
 ---
 name: create-action-word
-version: 1.1.4
+version: 1.2.0
+group: internal
 description: Creates or updates action words under packages/action_words/ following action-words-syntax.md. Use when adding DB seed/assert, API request/assert, or UI action/assert business actions, or when migrating ad-hoc test logic (SQL scripts, step bodies) into reusable action words.
 ---
 
@@ -24,7 +25,7 @@ description: Creates or updates action words under packages/action_words/ follow
    存在哪个库就在类上声明哪个别名（`datasource = "main"` /
    `"sqlserver"` / `"postgres"` / ...，别名与类型见 `config/env.py`
    `DATABASES`）；默认 `"main"`。
-4. 造数类：先在 `assets/ddl/<别名>/<table>.sql` 核对列名（generated/computed
+4. 造数类：先在 `knowledge/ddl/<别名>/<table>.sql` 核对列名（generated/computed
    列**不得**出现在插入列表；缺 DDL 时先走 `/dump-ddl` 或
    `python -m tuner_testkit.apps.dump_ddl <table> --datasource <别名>`），列名固化为模块级
    `*_COLUMNS` 元组。
@@ -74,6 +75,17 @@ description: Creates or updates action words under packages/action_words/ follow
     `NOW()` / `IFNULL`；探测用 `TOP`，时间用 `GETDATE()`；
   - PostgreSQL：禁止 `[ident]`、反引号、`TOP`、`ON DUPLICATE KEY`；探测用 `LIMIT`，
     时间用 `NOW()` / `CURRENT_TIMESTAMP`，冲突用 `ON CONFLICT`。
+
+## Changelog（追溯）
+
+新建或修改词条后，在同一个提交里：
+
+```bash
+uv run tuner-workspace changelog append --area action_words --skill create-action-word \
+  --action <新建|更新|删除> --items <word_id> --reason "<一句话>"
+```
+
+列名来自 `knowledge/ddl/<datasource>/<table>.sql`，不要凭空写列。
 
 ## Verify (must pass)
 

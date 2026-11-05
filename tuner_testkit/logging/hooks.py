@@ -119,7 +119,7 @@ def on_run_end(context: Any) -> None:
     for handler in list(logger.handlers):
         try:
             handler.flush()
-        except Exception:
+        except Exception:  # noqa: BLE001 -- a broken handler must not fail the test run
             pass
 
 

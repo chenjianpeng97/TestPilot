@@ -7,7 +7,7 @@ description: assets/testdesign 的章节、front-matter，以及被 test-executi
 # 测试设计（test-design-syntax）
 
 > 一篇文档描述一条可执行的测试设计。它记「测什么、怎么点、期望是什么」。
-> `assets/design/` 仍只记一条路由的副作用，不要混进本文。
+> `knowledge/wiki/design/` 仍只记一条路由的副作用，不要混进本文。
 
 ## 1. 路径
 
@@ -23,7 +23,7 @@ id: order-create
 title: 订单创建
 sut: order
 task_id: TASK-20260924-001
-source: assets/usecases/order/create.md
+source: knowledge/wiki/usecases/order/create.md
 version: 1.0.0
 confidence: high
 evidence:

@@ -1,7 +1,8 @@
 ---
 name: reuse-analysis
 version: 1.0.0
-description: Analyzes whether to reuse/add/update Feature steps, Page Objects, and API Objects by searching for existing assets, matching by intent/fingerprint, and minimizing duplication. Use before creating new behave steps/page/api objects. Do NOT force a behave reuse plan when the user explicitly requests pytest.
+group: internal
+description: Internal step (usually reached via maintain-bdd-assets). Analyzes whether to reuse/add/update Feature steps, Page Objects, and API Objects by searching for existing assets, matching by intent/fingerprint, and minimizing duplication. Use before creating new behave steps/page/api objects. Do NOT force a behave reuse plan when the user explicitly requests pytest.
 ---
 
 # Reuse Analysis (avoid asset duplication)
@@ -42,7 +43,7 @@ description: Analyzes whether to reuse/add/update Feature steps, Page Objects, a
 ## Pipeline alignment checks (required)
 
 - **MCP prerequisite**:
-  - Confirm whether a Playwright MCP Run/Capture exists for the target scenario(s).
+  - Confirm whether a browser-channel Run/Capture (Playwright MCP by default) exists for the target scenario(s).
   - If not, the reuse plan must state: **“block on capture”** and list what can/cannot be decided without it.
 
 - **Stage compatibility** (behave path only):

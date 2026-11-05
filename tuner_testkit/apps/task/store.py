@@ -406,8 +406,9 @@ def _append_decision(text: str, question_id: str, topic: str, option: str, note:
 def _curate(repo: Path, rel: str, *, task_id: str, question_id: str, topic: str, option: str, note: str) -> str:
     assert_no_secret(note)
     normalized = rel.replace("\\", "/")
-    if not normalized.startswith("assets/domain-notes/") or not normalized.endswith(".md"):
-        raise ValueError("curate path must be assets/domain-notes/**/*.md")
+    allowed = ("knowledge/wiki/domain-notes/", "assets/domain-notes/")  # second: pre-7.0 layout
+    if not normalized.startswith(allowed) or not normalized.endswith(".md"):
+        raise ValueError("curate path must be knowledge/wiki/domain-notes/**/*.md")
     path = _rel(repo, normalized)
     section = (
         f"\n## {question_id} {topic}\n\n"
@@ -485,4 +486,16 @@ def answer_question(
         "task_id": task_id,
         "task_status": task_meta.get("status"),
         "curated": curated or None,
+        "next": next_steps(str(meta.get("topic") or ""), option),
     }
+
+
+def next_steps(topic: str, option: str) -> list[str]:
+    """What the LLM does after a person answered (ports + custom apps, AGENTS.md §4)."""
+    if topic != LOG_SOURCE_TOPIC or option == "skip":
+        return []
+    return [
+        f"create-app：按 docs/spec/ports.md 的 log-source 契约写 apps/<name>/（通道 {option}），tool.py 声明 port=\"log-source\"",
+        f"maintain-config：在 config 的 PORTS 绑定 log-source，把 {option} 的地址与密钥写进 env_local.ENVIRONMENTS.<env>.OPS",
+        "health-check：tuner-workspace doctor 复检 ports.log-source",
+    ]

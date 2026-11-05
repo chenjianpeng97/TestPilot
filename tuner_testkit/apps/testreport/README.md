@@ -2,7 +2,7 @@
 
 ## 需求背景
 
-测试单（`assets/testsheet/<轮次>/`）填完后，要交一份 GJB438B 格式的软件测试报告。报告里的用例数、首轮与回归、缺陷等级矩阵都应从测试单算出来，不手抄；不随轮次变化的内容（系统名称、供需方、软硬件环境、通过准则）放在画像 `assets/domain-notes/testreport/<sut>.md`。
+测试单（`assets/testsheet/<轮次>/`）填完后，要交一份 GJB438B 格式的软件测试报告。报告里的用例数、首轮与回归、缺陷等级矩阵都应从测试单算出来，不手抄；不随轮次变化的内容（系统名称、供需方、软硬件环境、通过准则）放在画像 `assets/testreport/profiles/<sut>.md`。
 
 流程是三步：`stats --check` 让测试单自洽，`draft` 起草报告 Markdown（`assets/testreport/<sut>/<yyyy-mm>/<slug>.md`，入库、可审），`render` 套模板出 docx（`artifacts/runs/<run_id>/`，不入库）。编排见 skill `generate-testsheet-report`。
 

@@ -8,7 +8,10 @@ description: API Objects (APIModel) spec for an AI-assisted automation repo. Foc
 
 ## 目标与边界
 
-- **目标**：在团队缺少 API 文档习惯的前提下，将从 Playwright MCP 运行过程中捕获到的网络请求/响应沉淀为**可复用、可维护、可审计**的 API 资产（`packages/api_objects/`），供 behave steps **或** 用户明确选择的 pytest 用例调用。
+- **目标**：在团队缺少 API 文档习惯的前提下，将从浏览器通道（默认 Playwright MCP）运行过程中捕获到的网络请求/响应沉淀为**可复用、可维护、可审计**的 API 资产（`packages/api_objects/`），供 behave steps **或** 用户明确选择的 pytest 用例调用。
+- **第二通道**：被测系统有 OpenAPI / Swagger 文档时（原件放 `knowledge/raw/`，登记在 config `KNOWLEDGE.api_docs`），
+  `tuner-openapi-import <spec>` 走同一个冻结内核先建资产，之后抓到的真实流量合并进同一资产（同 method + normalized_path）。
+  文档生成的断言来自示例或类型推断，执行前要用真实请求核对。
 - **边界**：
   - **API Object = 路由资产**（按后端路由对齐），不是“某个场景的一次回放脚本”。
   - **不得持久化任何敏感凭证**（token/cookie 等）。

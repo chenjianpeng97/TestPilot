@@ -215,7 +215,7 @@ python packages/page_objects/example/login.py         # 单文件回放（__main
 ```
 
 **用途边界**：本地驱动供页面资产自检 / health check / pytest 回归 / doctor 体检。
-BDD 资产生成流程中的**网络证据捕获仍必须走 Playwright MCP**（见
+BDD 资产生成流程中的**网络证据捕获仍必须走浏览器通道**（默认 Playwright MCP，按 config `CHANNELS.browser`，见 `docs/spec/browser-channel.md` 与
 `.cursor/rules/bdd-pipeline-gates.mdc` Gate 1），本地驱动不得替代。
 
 ### doctor 与「自愈」的边界

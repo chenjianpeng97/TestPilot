@@ -1,10 +1,15 @@
 ---
 name: run-feature-playwright-mcp
-version: 1.2.0
-description: Runs behave Gherkin scenarios (or records an explore session) via Playwright MCP with Run→Capture→Freeze workflow and strict sanitization. Evidence always lands under artifacts/evidence/<run_id>/. Do NOT require this skill when the user explicitly requests pytest-only work with no MCP capture need.
+version: 1.3.0
+group: internal
+description: Internal step of maintain-bdd-assets. Runs behave Gherkin scenarios (or records an explore session) via the configured browser channel (Playwright MCP by default; config CHANNELS.browser) with Run→Capture→Freeze workflow and strict sanitization. Evidence always lands under artifacts/evidence/<run_id>/. Do NOT require this skill when the user explicitly requests pytest-only work with no MCP capture need.
 ---
 
-# Run Feature via Playwright MCP (Run → Capture)
+# Run Feature via the browser channel (Run → Capture)
+
+> Read `channels.browser` from `uv run tuner-config show --json` first. "Playwright MCP" below means the configured
+> channel; map tool names with `docs/spec/browser-channel.md`. Network evidence is weaker on `cursor-browser`
+> (no response bodies): tell the user before freezing API objects from it.
 
 ## Scope
 

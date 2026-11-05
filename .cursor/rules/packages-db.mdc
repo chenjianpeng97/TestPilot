@@ -2,7 +2,7 @@
 description: Require all DB access to go through tuner_testkit.db.DbClient with named datasources (MySQL / SQL Server / PostgreSQL coexist); forbid direct pymssql/pymysql/psycopg, ad-hoc SQLAlchemy engines, hardcoded DSNs, and SQL string interpolation
 globs: **/*.py
 alwaysApply: false
-version: 1.3.1
+version: 1.3.2
 ---
 
 # tuner_testkit.db — mandatory multi-datasource surface
@@ -90,7 +90,7 @@ class SeedOnSqlServer(ActionWord):
 - Mirror every non-trivial SQL as a human-readable copy in
   `assets/sql/<name>.sql` (existing convention). Docstrings in the service
   should reference the file. Table DDL references live under
-  `assets/ddl/<alias>/<table>.sql` (`python -m tuner_testkit.apps.dump_ddl <table>
+  `knowledge/ddl/<alias>/<table>.sql` (`python -m tuner_testkit.apps.dump_ddl <table>
   --datasource <alias>`).
 - One `DbClient` per logical unit of work — typically opened in a `Given`
   step, stored on context, and closed in `after_scenario`. Do not leak

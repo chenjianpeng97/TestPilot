@@ -72,6 +72,28 @@ def test_build_catalog_synthetic_workspace(tmp_path: Path) -> None:
     assert json.loads(out.read_text(encoding="utf-8"))["counts"]["features"] == 1
 
 
+def test_scan_knowledge_layer(tmp_path: Path) -> None:
+    _write(tmp_path / "knowledge" / "ddl" / "main" / "orders.sql", "CREATE TABLE orders (id int);\n")
+    _write(tmp_path / "knowledge" / "ddl" / "CHANGELOG.md", "# c\n")
+    _write(tmp_path / "knowledge" / "wiki" / "index.md", "# index\n")
+    _write(tmp_path / "knowledge" / "wiki" / "domain-notes" / "acme" / "profile.md", "---\nversion: 1.0.0\n---\n# Acme\n")
+    _write(tmp_path / "knowledge" / "requirements" / "REQ-a.md", "---\nkind: requirement\nid: REQ-a\nstatus: active\n---\n# REQ-a A\n")
+    _write(tmp_path / "knowledge" / "defects" / "DEF-20261104-001.md", "---\nid: DEF-20261104-001\nstatus: 激活\n---\n# d\n")
+    _write(tmp_path / "assets" / "testcases" / "README.md", "# cases\n")
+    rows = {row["path"]: row for row in scan_assets(tmp_path)}
+    assert set(rows) == {
+        "knowledge/wiki/domain-notes/acme/profile.md",
+        "knowledge/requirements/REQ-a.md",
+        "knowledge/defects/DEF-20261104-001.md",
+        "assets/testcases/README.md",
+    }
+    assert rows["knowledge/wiki/domain-notes/acme/profile.md"]["category"] == "domain-notes"
+    assert rows["knowledge/requirements/REQ-a.md"]["layer"] == "knowledge" and rows["knowledge/requirements/REQ-a.md"]["id"] == "REQ-a"
+    assert rows["assets/testcases/README.md"]["layer"] == "assets"
+    payload = build_catalog(tmp_path, include_kit_tools=False)
+    assert payload["knowledge"]["ddl"][0]["path"] == "knowledge/ddl/main"
+
+
 def test_build_catalog_dogfood_sees_fixtures() -> None:
     payload = build_catalog(DOGFOOD)
     tools = {row["tool_id"]: row for row in payload["tools"]}

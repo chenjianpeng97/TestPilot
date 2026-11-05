@@ -1,7 +1,8 @@
 ---
 name: feature-authoring
 version: 1.0.0
-description: Creates or rewrites behave Gherkin .feature files following behave-gerkin-syntax.md. Use when generating new BDD scenarios, converting testcases to .feature, or standardizing feature wording/tags/parameterization. Do NOT use when the user explicitly requests pytest instead of behave/Gherkin.
+group: internal
+description: Internal step (usually reached via maintain-bdd-assets). Creates or rewrites behave Gherkin .feature files following behave-gerkin-syntax.md. Use when generating new BDD scenarios, converting testcases to .feature, or standardizing feature wording/tags/parameterization. Do NOT use when the user explicitly requests pytest instead of behave/Gherkin.
 ---
 
 # Feature Authoring (behave / Gherkin)

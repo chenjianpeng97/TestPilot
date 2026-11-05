@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import pathlib
-import sys
 
 from tuner_testkit.project import (
     api_objects_dir,

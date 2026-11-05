@@ -46,11 +46,13 @@ def test_ask_blocks_until_answer_then_curates(tmp_path: Path):
     answered = answer_question(
         asked["id"],
         option="rancher-api",
-        note="命名空间见 env_local 的 LOG_SOURCE",
-        curate="assets/domain-notes/order/log-source.md",
+        note="命名空间见 env_local 的 OPS.rancher",
+        curate="knowledge/wiki/domain-notes/order/log-source.md",
         root=tmp_path,
     )
     assert answered["task_status"] == "in_progress"
+    assert any("create-app" in step and "log-source" in step for step in answered["next"])
+    assert any("PORTS" in step for step in answered["next"])
     assert answered["path"].startswith("artifacts/inbox/archived-question/")
     assert not (tmp_path / "artifacts" / "inbox" / "questions" / f"{asked['id']}.md").is_file()
     archived = tmp_path / answered["path"]

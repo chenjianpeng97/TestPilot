@@ -1,51 +1,39 @@
 ---
-description: assets/ is the knowledge base for humans and the LLM; enforce provenance metadata, raw-vs-curated boundaries, and grounding (consult INDEX before generating)
+description: assets/ is the asset layer (test design, testcases, testsheets, reports, SQL copies) that evolves with test work; enforce provenance metadata, grounding in knowledge/, and the object changelog
 globs: assets/**
 alwaysApply: false
-version: 1.2.2
+version: 2.0.0
 ---
 
-# assets — 知识层硬约束
+# assets — 资产层硬约束
 
-`assets/` 存放给人和 LLM 阅读、作为生成测试代码/工具依据的知识。完整规范见
-`docs/spec/assets-knowledge-syntax.md`；全局发现入口见根 `INDEX.md`。
-SUT 自学习见 `docs/spec/sut-self-learning.md`；design schema 见
-`docs/spec/design-knowledge-syntax.md`。
+`assets/` 放随测试工作演进的 Markdown 资产：`sql/`、`testdesign/`、`testcases/`、`testsheet/`、`testreport/`（含 `testreport/profiles/`）。
+Python 资产在 `packages/`。完整规范见 `docs/spec/assets-knowledge-syntax.md`；被测系统的知识在 `knowledge/`（`.cursor/rules/knowledge.mdc`）。
 
 ## Grounding（生成前必读）
 
-- **生成任何测试 / action word / api·page object / 工具之前**，先查根 `INDEX.md`
-  （及存在时的 `INDEX.project.md`）检索相关 domain 的知识（真实 DDL 列名、
-  `assets/sql`、`usecases` / `domain-notes` / `explore` / `design`），
+- **生成任何用例 / 测试设计 / action word / api·page object / 工具之前**，先查 `INDEX.project.md`，
+  再读 `knowledge/`：需求（`knowledge/requirements/`）、业务规则（`knowledge/wiki/`）、真实列名（`knowledge/ddl/`）。
   **不要凭空臆造**列名、接口字段、业务规则。
-- 缺知识时先回填：`/dump-ddl` 或 `python -m tuner_testkit.apps.dump_ddl`、
-  Playwright MCP 探索（落盘 `artifacts/evidence/<run_id>/`）、
-  `python -m tuner_testkit.apps.recorder` / `api_recorder`，再进入生成。
+- 缺知识时先回填：`dump-ddl`、`maintain-wiki`（ingest 原件）、浏览器通道探索（落盘 `artifacts/evidence/<run_id>/`）、
+  `tuner-recorder` / `tuner-openapi-import`，再进入生成。
 
 ## 目录与元数据
 
-- 目录分类固定：`ddl/<datasource>/`、`sql/`、`usecases/<domain>/`、
-  `domain-notes/<domain>/`、`explore/<app>/`、`design/<app>/`、`testdesign/`、
-  `testcases/<模块>/<套件>/`、`testsheet/<轮次>/`、`testreport/`
-  （新增类别前先改 spec，再改本 rule）。功能用例集见 `docs/spec/testcase-syntax.md`。
-  测试单见 skill `maintain-testsheet`：`testsheet.md` 不写 YAML 头；`testcase/` 是当次从用例库复制的步骤。
-- 人工/半自动区文件头必须带元数据：`domain / source / date / version / confidence`
-  （Markdown 用 YAML front-matter，SQL 用顶部 `--` 注释）。`testsheet.md` 除外。
-- `explore/` 与 `design/` 还应填 `evidence`（run_id 列表）。
+- 目录分类固定（新增类别前先改 spec，再改本 rule）。用例见 `docs/spec/testcase-syntax.md`；测试单见 skill `maintain-testsheet`：
+  `testsheet.md` 不写 YAML 头，`testcase/` 是当次从用例库复制的步骤。
+- Markdown 资产文件头带元数据（`source / version / confidence` 等，按类见各 syntax）；`testsheet.md` 除外。
+- 用例的 `source` / `requirements` 优先指向 `knowledge/requirements/` 的需求 ID。
 - `confidence: high` 表示人工核实过——LLM 应优先采信。
-
-## raw vs curated
-
-- **raw**（原始导入物）：**禁止改写语义**，只补元数据头、放对目录。
-- **curated**（加工知识）：可编辑，但必须保留 `source` 指回来源并 bump `version`。
 
 ## 变更留痕
 
-- 自动区（`ddl/`）更新由工具写 `assets/CHANGELOG.md`；人不手改自动区语义。
-- curated 更新 → bump `version` + 正文追加变更说明；随后由 `maintain-index`
-  增量更新 `INDEX.md` / `INDEX.project.md`。
+- 改单元 → bump `version`；每次维护 → `tuner-workspace changelog append --area <testcases|testsheet|testdesign> …`
+  （`docs/spec/metadata-conventions.md` §4）。不写 `artifacts/inbox` 代替。
+- 随后 `tuner-workspace index render` 刷新 `INDEX.project.md` 自动区。
 
 ## 禁止
 
-- 不得写入 token / cookie / 密码 / Authorization / session 等敏感值。
+- 不得写入 token / cookie / 密码 / Authorization / session 等敏感值（账号只写 `account:<id>`）。
 - 不得在 `assets/` 放置可执行测试代码（那属于 `tests/` 或 `packages/`）。
+- 不得把被测系统知识（DDL、业务讲解、需求、缺陷）写进 `assets/`：放 `knowledge/`。

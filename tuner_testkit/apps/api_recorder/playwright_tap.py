@@ -86,7 +86,7 @@ def _headers(obj: Any) -> dict[str, str]:
     raw = getattr(obj, "headers", None) or {}
     try:
         return {str(k): str(v) for k, v in dict(raw).items()}
-    except Exception:
+    except Exception:  # noqa: BLE001 -- the tap reads live Playwright objects; any failure means no headers
         return {}
 
 
@@ -97,11 +97,11 @@ def _request_body(request: Any) -> bytes | str | None:
             buf = buf()
         if buf is not None:
             return buf
-    except Exception:
+    except Exception:  # noqa: BLE001 -- fall back to post_data below
         pass
     try:
         return getattr(request, "post_data", None)
-    except Exception:
+    except Exception:  # noqa: BLE001 -- no body is a valid capture
         return None
 
 
@@ -109,5 +109,5 @@ def _response_body(response: Any) -> bytes:
     try:
         body = response.body()
         return body if body is not None else b""
-    except Exception:
+    except Exception:  # noqa: BLE001 -- redirects / closed responses have no body
         return b""

@@ -185,11 +185,11 @@ def _summary_markdown(
     routes: list[dict[str, Any]],
 ) -> str:
     lines = [
-        f"---",
+        "---",
         f"run_id: {run_id}",
         f"scenario_id: {scenario_id}",
-        f"sanitizer: tuner_testkit.api_objects.recording.sanitize",
-        f"---",
+        "sanitizer: tuner_testkit.api_objects.recording.sanitize",
+        "---",
         "",
         f"# Evidence {run_id}",
         "",

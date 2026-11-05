@@ -1,7 +1,8 @@
 ---
 name: freeze-api-objects
-version: 1.1.0
-description: Freezes sanitized Playwright MCP network captures into route-aligned, deduped API Objects under packages/api_objects/ following api-objects-syntax.md and bdd-run-gherkin-in-playwrightMCP.md. Use when creating/updating APIModel assets.
+version: 1.2.1
+group: internal
+description: Internal step of maintain-bdd-assets / sut-self-learning. Freezes sanitized browser-channel network captures (Playwright MCP by default) or an OpenAPI document (tuner-openapi-import) into route-aligned, deduped API Objects under packages/api_objects/ following api-objects-syntax.md and bdd-run-gherkin-in-playwrightMCP.md. Use when creating/updating APIModel assets.
 ---
 
 # Freeze Captures → API Objects (route-aligned)
@@ -66,6 +67,23 @@ description: Freezes sanitized Playwright MCP network captures into route-aligne
 - `tuner_testkit.api_test` stores the raw body on **`ApiResponse.content`** (bytes) for every call; `json` is set only when the body parses as JSON.
 - For download routes, **assert HTTP success only** in the asset (e.g. `AssertOperation` on `$.http_status == 200`). Do **not** assert on `Content-Disposition` filenames, body length, or sheet row counts — those are scenario-specific and brittle.
 - **Do not** rely on `extracts` with `jsonpath: $.data.*` when the response is not JSON; document in `description` that consumers read **`resp.content`** after `execute()`. Parsing xlsx/CSV belongs in **`tuner_testkit.excel`** (`ExcelWorkbook.from_bytes`, `first_sheet_rows`, etc.), not inside `packages/api_objects/`.
+
+## Second channel: OpenAPI
+
+When the SUT ships an OpenAPI / Swagger document (original under `knowledge/raw/`, registered in config
+`KNOWLEDGE.api_docs`), `uv run tuner-openapi-import <spec> [--path-prefix …] [--dry-run]` freezes assets through the same
+freezer; later captures of the same `method + normalized_path` merge into that asset. Assertions from the document are
+example- or type-based: confirm them against a real capture before relying on them.
+
+## Changelog
+
+Recorders and `tuner-openapi-import` append `packages/api_objects/CHANGELOG.md` themselves. Hand edits made by this
+skill need one line in the same commit:
+
+```bash
+uv run tuner-workspace changelog append --area api_objects --skill freeze-api-objects \
+  --action <新建|更新> --items "POST /api/orders" --reason "<evidence run_id>"
+```
 
 ## Audit checklist (must pass)
 

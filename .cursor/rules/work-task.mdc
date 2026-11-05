@@ -1,12 +1,12 @@
 ---
-description: Work tasks live in work/tasks. When a human must choose a missing evidence channel, write an inbox question and block the task instead of inventing the channel.
+description: Work tasks live in work/tasks. When a human must choose a missing evidence channel, write an inbox question and block the task instead of inventing the channel; after the answer, implement the port as a workspace app.
 alwaysApply: true
-version: 1.1.0
+version: 1.2.0
 ---
 
 # 工作任务与人类提问
 
-细则见 `docs/spec/work-task.md`、`docs/spec/test-design-syntax.md`。
+细则见 `docs/spec/work-task.md`、`docs/spec/test-design-syntax.md`、`docs/spec/ports.md`。
 
 ## Must
 
@@ -14,11 +14,14 @@ version: 1.1.0
 - 测试设计写入 `assets/testdesign/`，并用 `tuner-task validate` 检查八个章节。
 - 端到端点击用 `type: test-execution`，`design` 指向已有测试设计；报告写入 `assets/testreport/`，证据用 `tuner-evidence persist` 或 `attach` 挂上 `task_id`、截图、脱敏日志、接口 JSON。
 - 执行结束后把结果写入该测试设计的「执行反馈」，只引用证据路径。
+- 后端日志是**端口**：先看 `tuner-workspace doctor` 的 `ports.log-source`，config `PORTS` 已绑定就用该 app。
 - 仓库没有写明的证据通道（典型是后端日志：SSH 目录、日志接口、Rancher API）立刻 `tuner-task ask`。日志主题用 `sut-log-source`。
 - 提问写入 `artifacts/inbox/questions/` 后停止这一支，把任务保持在 `blocked`，直到 `tuner-task answer`。回答后的问题文件在 `artifacts/inbox/archived-question/`。
+- 回答后按 `answer` 输出的 `next`：`create-app` 按端口契约在 workspace `apps/` 写适配器（`tool.py` 声明 `port=`），`maintain-config` 写 `PORTS` 与 `OPS`。
 
 ## Must not
 
 - 在人回答前选定日志通道，或编写对应的 SSH / HTTP / Rancher 取数实现。
-- 把密码、token、Cookie 写进任务、问题、`--note` 或 domain-notes。用 `account_id`、环境变量名或 `config/env_local.py` 指向。
-- 用 `artifacts/inbox/` 的会话流水代替 `work/tasks`。会话流水仍然要写，见 `agent-task-log`。
+- 把端口适配器写进 kit（`tuner_testkit/`）：它属于 workspace `apps/`。
+- 把密码、token、Cookie 写进任务、问题、`--note` 或 wiki。用 `account_id`、环境变量名或 `config/env_local.py` 的键名指向。
+- 用 `artifacts/inbox/` 的会话流水代替 `work/tasks`。

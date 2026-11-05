@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import pytest
 
 from tuner_testkit.api_objects.auth import assert_recorded_response, materialize_payload
 from tuner_testkit.api_test.model import ApiResponse
@@ -42,8 +42,5 @@ def test_assert_recorded_response_code_mismatch():
         content=b"",
     )
     recorded = {"http_status": 200, "is_json": True, "json": {"code": 200, "msg": "ok"}}
-    try:
+    with pytest.raises(AssertionError, match=r"\$\.code"):
         assert_recorded_response(resp, recorded)
-        assert False, "expected AssertionError"
-    except AssertionError as exc:
-        assert "$.code" in str(exc)

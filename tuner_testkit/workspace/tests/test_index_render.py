@@ -61,3 +61,41 @@ def test_render_and_check_round_trip(tmp_path: Path) -> None:
     stale["tools"] = []
     result = check_index(tmp_path, catalog=stale)
     assert result["up_to_date"] is False and result["stale_zones"] == ["apps"]
+
+
+LAYERED = {
+    **CATALOG,
+    "knowledge": {
+        "ddl": [],
+        "sql_files": [],
+        "assets": [
+            {"path": "knowledge/requirements/REQ-a.md", "layer": "knowledge", "category": "requirements", "id": "REQ-a",
+             "version": "1.0.0", "status": "active", "title": "A"},
+            {"path": "assets/testcases/m/s/X.md", "layer": "assets", "category": "testcases", "domain": None,
+             "source": "REQ-a", "confidence": "high", "title": "X"},
+        ],
+    },
+    "tools": [
+        {"tool_id": "logs", "origin": "workspace", "module": "apps.logs", "port": "log-source", "argv": ["python", "-m", "apps.logs"], "summary": "L"},
+        {"tool_id": "t", "origin": "workspace", "module": "apps.t", "argv": ["python", "-m", "apps.t"], "summary": "T"},
+    ],
+}
+
+
+def test_knowledge_and_ports_zones() -> None:
+    text = "<!-- auto:begin:knowledge -->\n<!-- auto:end:knowledge -->\n<!-- auto:begin:assets -->\n<!-- auto:end:assets -->\n" \
+           "<!-- auto:begin:ports -->\n<!-- auto:end:ports -->\n"
+    new_text, rendered, _ = render_text(text, LAYERED)
+    assert rendered == ["knowledge", "assets", "ports"]
+    knowledge_zone = new_text.split("auto:end:knowledge")[0]
+    assert "REQ-a" in knowledge_zone and "assets/testcases" not in knowledge_zone
+    assets_zone = new_text.split("auto:begin:assets")[1].split("auto:end:assets")[0]
+    assert "assets/testcases/m/s/X.md" in assets_zone and "knowledge/requirements" not in assets_zone
+    ports_zone = new_text.split("auto:begin:ports")[1]
+    assert "`log-source` | `logs` | `apps.logs`" in ports_zone and "`t`" not in ports_zone
+
+
+def test_legacy_index_without_knowledge_zone_keeps_listing_knowledge() -> None:
+    text = "<!-- auto:begin:assets -->\n<!-- auto:end:assets -->\n"
+    new_text, _, _ = render_text(text, LAYERED)
+    assert "knowledge/requirements/REQ-a.md" in new_text and "assets/testcases/m/s/X.md" in new_text

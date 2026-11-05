@@ -1,8 +1,11 @@
 # Agent 任务日志（`artifacts/inbox/`）
 
-> 给 `.cursor/agents/**` 编排任务用的**运行记录**约定。
-> 硬约束见 `.cursor/rules/agent-task-log.mdc`。
-> Evidence（网络/DOM dump）仍落 `artifacts/evidence/<run_id>/`，本目录不替代它。
+> 给 `.cursor/agents/**` 编排任务用的**本机运行记录**约定。硬约束见 `.cursor/rules/agent-task-log.mdc`。
+>
+> - **谁必须写**：只有按 `.cursor/agents/*.md` 编排的任务（`sut-self-learning`、`bdd-asset-pipeline`、`sut-source-to-design`）。
+> - **skill 不写 inbox**：`maintain-*`、`execute-testsheet` 等 skill 的追溯写在被维护对象自己的 changelog 里并入库
+>   （`docs/spec/metadata-conventions.md` §4）。inbox 不入库，换机器就没了，不能当追溯依据。
+> - Evidence（网络/DOM dump）仍落 `artifacts/evidence/<run_id>/`，本目录不替代它。
 
 ## 1. 路径
 
@@ -39,7 +42,7 @@ evidence:
 ## Outputs
 | kind | path | action |
 | --- | --- | --- |
-| explore | assets/explore/web/….md | add |
+| explore | knowledge/wiki/explore/web/….md | add |
 | api_object | packages/api_objects/… | add |
 
 ## Next
@@ -72,7 +75,7 @@ evidence:
 artifacts/inbox/questions/Q-<YYYYMMDD>-<nnn>.md
 ```
 
-回答后同一文件移到 `artifacts/inbox/archived-question/`。字段与命令见 `docs/spec/work-task.md`。提问后把对应 `work/tasks` 标为 `blocked`。回答写入任务的 `## Decisions`；可复用的通道说明策展到 `assets/domain-notes/`。
+回答后同一文件移到 `artifacts/inbox/archived-question/`。字段与命令见 `docs/spec/work-task.md`。提问后把对应 `work/tasks` 标为 `blocked`。回答写入任务的 `## Decisions`；可复用的通道说明策展到 `knowledge/wiki/domain-notes/`。
 
 ## 5. 密钥
 

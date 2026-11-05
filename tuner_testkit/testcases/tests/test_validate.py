@@ -157,3 +157,39 @@ def test_stages_list_ok_and_rejects_unknown(tmp_path: Path) -> None:
     base_bad = _tree(tmp_path / "bad", bad)
     errors = validate_tree(base_bad)
     assert any("stages items must be one of" in item for item in errors)
+
+
+def test_changelog_allowed_at_root(tmp_path: Path) -> None:
+    base = _tree(tmp_path)
+    (base / "CHANGELOG.md").write_text("# CHANGELOG\n", encoding="utf-8")
+    assert validate_tree(base) == []
+    (base / "notes.md").write_text("x\n", encoding="utf-8")
+    assert any("only README.md and CHANGELOG.md" in item for item in validate_tree(base))
+
+
+def test_requirements_and_data_links(tmp_path: Path) -> None:
+    traced = _CASE.replace(
+        "execution: 手工\n",
+        "execution: 手工\nrequirements: [REQ-user-login]\ndata: [account:qa-admin, data/login/users.yaml]\n",
+    )
+    base = _tree(tmp_path, traced)
+    reqs = tmp_path / "knowledge" / "requirements"
+    reqs.mkdir(parents=True)
+    (reqs / "REQ-user-login.md").write_text("---\nkind: requirement\nid: REQ-user-login\n---\n", encoding="utf-8")
+    (tmp_path / "data" / "login").mkdir(parents=True)
+    (tmp_path / "data" / "login" / "users.yaml").write_text("users: []\n", encoding="utf-8")
+    assert validate_tree(base) == []
+
+    broken = _CASE.replace(
+        "execution: 手工\n",
+        "execution: 手工\nrequirements: [REQ-missing, login]\ndata: [data/none.yaml, data/x.local.yaml, secrets.txt, 'account:']\n",
+    )
+    base_bad = _tree(tmp_path / "bad", broken)
+    (tmp_path / "bad" / "knowledge" / "requirements").mkdir(parents=True)
+    errors = validate_tree(base_bad)
+    assert any("REQ-missing not found" in item for item in errors)
+    assert any("'login' must look like REQ-" in item for item in errors)
+    assert any("data/none.yaml does not exist" in item for item in errors)
+    assert any("local secret file" in item for item in errors)
+    assert any("must start with data/ or account:" in item for item in errors)
+    assert any("needs an account id" in item for item in errors)

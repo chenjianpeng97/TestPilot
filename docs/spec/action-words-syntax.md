@@ -174,7 +174,7 @@ uv run python -m tuner_testkit.action_words catalog [-o out.json] # 全量目录
    `python -m tuner_testkit.action_words list` 确认无重复/无既有可复用 word；
 2. **确定目标数据源**：业务数据长期存在哪个库就声明哪个别名
    （`datasource = "main"` / `"sqlserver"` / ...，见 `config/env.py` DATABASES）；
-3. 造数类先写纯构建函数 + 列名元组（列名以 `assets/ddl/<别名>/*.sql` 为准，注意
+3. 造数类先写纯构建函数 + 列名元组（列名以 `knowledge/ddl/<别名>/*.sql` 为准，注意
    generated column 不能出现在插入列表）；
 4. 按模板写 Params / Result / run / example_params，`@register` 注册；
 5. `uv run pytest packages/tests/test_action_word_template.py` 通过；

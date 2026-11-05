@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
-from .errors import ApiAssertError, AuthPolicyError, FilesPolicyError, HeadersPolicyError, SchemaValidationError
+from .errors import ApiAssertError, FilesPolicyError, HeadersPolicyError, SchemaValidationError
 from .jsonpath import exists as jsonpath_exists
 from .jsonpath import get as jsonpath_get
 

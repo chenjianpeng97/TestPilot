@@ -1,4 +1,4 @@
-"""Static, round-independent report fields kept in assets/domain-notes/testreport/<sut>.md."""
+"""Static, round-independent report fields kept in assets/testreport/profiles/<sut>.md."""
 
 from __future__ import annotations
 

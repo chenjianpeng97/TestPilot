@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Literal
 
 TOOL_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+PORT_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 ParserFactory = Callable[[], argparse.ArgumentParser]
 RuntimeKind = Literal["job", "long_lived"]
 Visibility = Literal["workbench", "local"]
@@ -44,6 +45,7 @@ class ToolSpec:
     runtime: RuntimeKind = "job"
     visibility: Visibility = "workbench"
     readme_path: str | None = None
+    port: str | None = None  # port contract this app implements (docs/spec/ports.md), e.g. "log-source"
     origin: str = "workspace"  # "workspace" (apps/<name>) or "kit" (tuner_testkit.apps.<name>)
     parser_factory: ParserFactory | None = None
     json_params: tuple[str, ...] = ()
@@ -77,11 +79,16 @@ def tool(
     runtime: RuntimeKind = "job",
     visibility: Visibility = "workbench",
     readme_path: str | None = None,
+    port: str | None = None,
     json_params: Iterable[str] = (),
     hide_params: Iterable[str] = (),
     schema_overlay: dict[str, Any] | None = None,
 ) -> Callable[[ParserFactory], ParserFactory]:
-    """Register a CLI tool. Decorate an import-safe ``build_parser``."""
+    """Register a CLI tool. Decorate an import-safe ``build_parser``.
+
+    ``port`` declares that this workspace app is the adapter for a kit port
+    contract (``docs/spec/ports.md``), e.g. ``port="log-source"``.
+    """
 
     def decorator(factory: ParserFactory) -> ParserFactory:
         spec = register_tool(
@@ -97,6 +104,7 @@ def tool(
             runtime=runtime,
             visibility=visibility,
             readme_path=readme_path,
+            port=port,
             json_params=json_params,
             hide_params=hide_params,
             schema_overlay=schema_overlay,
@@ -121,12 +129,15 @@ def register_tool(
     runtime: RuntimeKind = "job",
     visibility: Visibility = "workbench",
     readme_path: str | None = None,
+    port: str | None = None,
     json_params: Iterable[str] = (),
     hide_params: Iterable[str] = (),
     schema_overlay: dict[str, Any] | None = None,
 ) -> ToolSpec:
     if not TOOL_ID_RE.fullmatch(tool_id):
         raise ValueError(f"invalid tool_id: {tool_id!r} (expected ^[a-z][a-z0-9_]*$)")
+    if port is not None and not PORT_RE.fullmatch(port):
+        raise ValueError(f"invalid port: {port!r} (expected ^[a-z][a-z0-9-]*$)")
     if ".." in module or not (module.startswith("apps.") or module.startswith("tuner_testkit.apps.")):
         raise ValueError(f"invalid tool module: {module!r} (expected apps.<name> or tuner_testkit.apps.<name>)")
     if runtime not in ("job", "long_lived"):
@@ -146,6 +157,7 @@ def register_tool(
         runtime=runtime,
         visibility=visibility,
         readme_path=readme_path,
+        port=port,
         origin="kit" if module.startswith("tuner_testkit.") else "workspace",
         parser_factory=factory,
         json_params=tuple(json_params),
@@ -271,6 +283,7 @@ def spec_to_dict(spec: ToolSpec) -> dict[str, Any]:
         "runtime": spec.runtime,
         "visibility": spec.visibility,
         "readme_path": spec.readme_path,
+        "port": spec.port,
     }
 
 

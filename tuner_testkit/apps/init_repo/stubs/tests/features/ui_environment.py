@@ -66,5 +66,5 @@ def after_step(context, step):
     out_dir.mkdir(parents=True, exist_ok=True)
     try:
         page.screenshot(path=str(out_dir / f"ui_failed_step_{ts}_{safe_step}.png"), full_page=True)
-    except Exception:
+    except Exception:  # noqa: BLE001 -- best-effort screenshot; must not mask the step failure
         return

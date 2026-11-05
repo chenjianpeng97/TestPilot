@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from tuner_testkit.artifacts import RunManifest, default_producer, start_run
+from tuner_testkit.artifacts import default_producer, start_run
 from tuner_testkit.logging import log_error, log_info
 from tuner_testkit.tools.manifest import ToolSpec, build_argv, get_tool, validate_params
 

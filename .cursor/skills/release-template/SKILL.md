@@ -1,6 +1,7 @@
 ---
 name: release-template
 version: 1.0.1
+group: internal
 description: Versions the template's shared platform assets. Use when tuner_testkit/** or .cursor/** changed and the init_repo release manifest is stale (drift), to decide a semantic version bump, refresh the manifest, and write release notes.
 ---
 
@@ -29,7 +30,7 @@ description: Versions the template's shared platform assets. Use when tuner_test
    - `MAJOR`：不兼容的规则/接口/目录约定变更（下游需要迁移）。
    - `MINOR`：新增 rule/skill/agent/工具或向后兼容的能力增强。
    - `PATCH`：措辞/修复/文档级改动。
-   - 变更清单可结合各区 `CHANGELOG`（`assets/CHANGELOG.md` 等）与 git diff。
+   - 变更清单可结合各区 `CHANGELOG`（`knowledge/ddl/CHANGELOG.md` 等）与 git diff。
 3. **bump 版本**：更新 `pyproject.toml` 的 `[project] version`；对语义变化明显的
    `.cursor/**` 组件同步 bump 其 front-matter `version`（随后 `python -m tuner_testkit.apps.index_ai`
    刷新 `.cursor/REGISTRY.md`）。

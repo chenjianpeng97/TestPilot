@@ -1,7 +1,8 @@
 # SUT 自学习（feature 规格）
 
 > **定位**：本文件是 epic「repo-as-a-platform」下的旗舰 feature 规格，**不是**平台总纲。
-> 稳定世界观仍是根 [`AGENTS.md`](../../AGENTS.md)；能力地图仍是 [`INDEX.md`](../../INDEX.md)。
+> 稳定世界观仍是根 [`AGENTS.md`](../../AGENTS.md)；业务资产地图是 `INDEX.project.md`。
+> 浏览器通道按 config `CHANNELS.browser` 选择（`docs/spec/browser-channel.md`），下文的「Playwright MCP」指默认通道。
 > 本 feature 的价值是串起六层几乎全部能力，用它扩展并验证平台。
 
 > **实践驱动**：design 知识的完备格式以下游 dogfood（Plane）为准。
@@ -26,7 +27,7 @@ Playwright MCP 探索式测试
 artifacts/evidence/<run_id>/     ← 统一落盘（强制）
         │
         ├─► 路径一 用户故事
-        │     assets/explore/** 能力清单 / 站点地图
+        │     knowledge/wiki/explore/** 能力清单 / 站点地图
         │     （可叠加 assets/usecases、人工文档、互联网资料）
         │           │
         │           ▼
@@ -39,7 +40,7 @@ artifacts/evidence/<run_id>/     ← 统一落盘（强制）
                 · DB 日志 / 前后快照（用户自建 apps 或参考 tuner-db-diff）
                 · 前后端源码路径（工程师给出，LLM 阅读）
                 · 人工 PRD / apidoc / domain-notes
-              整理收敛 → assets/design/<app>/<route-slug>.md
+              整理收敛 → knowledge/wiki/design/<app>/<route-slug>.md
                     │
                     ▼
               Test Assets → action_words / 断言策略
@@ -62,11 +63,11 @@ artifacts/evidence/<run_id>/     ← 统一落盘（强制）
 | 通道 | 典型做法 | 落点 |
 | --- | --- | --- |
 | MCP 网络 + DOM | Playwright MCP；必须落盘 evidence | `artifacts/evidence/` |
-| DDL | `tuner-dump-ddl` | `assets/ddl/` |
-| 源码 | 工程师给出前后端路径，LLM 读 models/views/urls | `assets/design/`（inferred） |
-| 应用日志 | 仓库已有说明时按 `create-app` 写 log fetcher；没有说明时 `tuner-task ask --topic sut-log-source`，等人在 SSH 目录、日志接口、Rancher API 中选一个 | `apps/<name>/`；决定记在 `work/tasks` 与 `assets/domain-notes` |
+| DDL | `tuner-dump-ddl` | `knowledge/ddl/` |
+| 源码 | 工程师给出前后端路径，LLM 读 models/views/urls | `knowledge/wiki/design/`（inferred） |
+| 应用日志 | 仓库已有说明时按 `create-app` 写 log fetcher；没有说明时 `tuner-task ask --topic sut-log-source`，等人在 SSH 目录、日志接口、Rancher API 中选一个 | `apps/<name>/`；决定记在 `work/tasks` 与 `knowledge/wiki/domain-notes` |
 | DB 日志 / diff | 用户自建，或后续参考 `tuner-db-diff` | `apps/` 或 kit |
-| 人工文档 | 原样放入，只补 front-matter | `assets/usecases` / `domain-notes` |
+| 人工文档 | 原样放入，只补 front-matter | `knowledge/wiki/usecases` / `domain-notes` |
 
 所有通道最终都要能指到一次 `run_id` 或明确的 `source` 字符串。
 
@@ -81,7 +82,7 @@ artifacts/evidence/<run_id>/     ← 统一落盘（强制）
 | `action_words` | kit 框架在，下游目录常空 | 缺「从 trace 反推 words」 |
 | `apps/` CLI | 独立工具规范齐全 | 多数不产 JSON；证据 provider 缺约定 |
 | `tests/` behave | 双 stage 骨架 | Gate 曾要求必须先有 `.feature` |
-| `INDEX.md` | maintain-index skill | 缺自主知识策展 agent |
+| `INDEX.project.md` / `knowledge/wiki/index.md` | maintain-index / maintain-wiki skill | wiki 的 lint 仍靠人触发 |
 | DNA | `tuner-dna sync` 成熟 | 新组件走这条下发 |
 
 ## 5. 分阶段路线图

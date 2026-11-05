@@ -229,7 +229,7 @@ class PageRecorderSession:
         finally:
             try:
                 driver.close()
-            except Exception:
+            except Exception:  # noqa: BLE001 -- cleanup must not mask the session result
                 pass
         return len(self.freezer.results)
 
@@ -240,7 +240,7 @@ class PageRecorderSession:
                     return
                 try:
                     url = page.url
-                except Exception:
+                except Exception:  # noqa: BLE001 -- page closed or navigating; skip this tick
                     return
                 if url and not url.startswith("about:") and _host_ok(url, self.include_host):
                     if url_path_from_url(url) != self.current_path:

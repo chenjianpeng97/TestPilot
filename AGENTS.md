@@ -1,93 +1,119 @@
-<!-- version: 1.7.4 -->
-# AGENTS — 平台总入口（轻量 DM）
+<!-- version: 2.0.0 -->
+# AGENTS — TestPilot 总入口
 
-> 本文件是"repo as a platform"的**稳定世界观**：只写不常变的分层结构与角色。
-> 「当前仓库有哪些具体知识与能力」这类会频繁变化的信息**不在这里**，去读
-> [`INDEX.md`](INDEX.md)（平台能力地图）与 [`.cursor/REGISTRY.md`](.cursor/REGISTRY.md)（AI 组件注册表）。
-> 若存在 `INDEX.project.md`（下游项目仓的业务资产地图），生成业务测试前一并阅读。
+> TestPilot 用一个 Git 仓库加一套 rule / skill / agent / hook，约束读这个仓库的 AI 怎么工作，
+> 同时让测试工程师把工作信息都存进同一个仓库维护。本文件只写不常变的结构与原则。
 >
-> 「自动学习被测系统并完成验收自动化」是 epic 下的旗舰 feature，规格见
-> [`docs/spec/sut-self-learning.md`](docs/spec/sut-self-learning.md)，不是本文件的替代总纲。
+> - 业务资产地图：[`INDEX.project.md`](INDEX.project.md)（生成任何测试、资产、工具前先读）。
+> - AI 组件与版本：[`.cursor/REGISTRY.md`](.cursor/REGISTRY.md)（`tuner-index-ai` 确定性生成）。
+> - 本仓补充约定：存在 `AGENTS.local.md` 时一并读，它优先于本文件的通用默认。`tuner-dna sync` 永不改它。
+> - 运行库与 CLI 来自 PyPI 包 `tuner-testkit`（导入名 `tuner_testkit`，命令 `tuner-*`）。
 
-## 1. 六层分层结构（职责边界）
+<!-- platform-only:begin -->
+> **平台仓说明**：你正在平台仓里（`tuner_testkit/` 源码 + DNA 源）。平台能力地图是 [`INDEX.md`](INDEX.md)；
+> `dogfood/` 是同一 scaffold 生成的 workspace 示范，它的业务地图是 `dogfood/INDEX.project.md`。
+> 平台与下游仓的分工见文末「平台仓与下游仓」。
+<!-- platform-only:end -->
 
-| 层 | 目录 | 职责 | 谁运行 |
+## 1. 分层结构
+
+| 层 | 目录 | 职责 | 演进节奏 |
 | --- | --- | --- | --- |
-| 知识层 | `assets/` | 给人和 LLM 阅读、生成测试代码的基础知识（ddl / sql / usecases / domain-notes / explore / design / testdesign / testcases / testsheet / testreport）。见 `docs/spec/assets-knowledge-syntax.md`。 | 只读引用 |
-| 运行库 | `tuner_testkit/`（PyPI：`tuner-testkit`） | 公共运行时与 CLI（db / logging / api_test / page_test / fake / recorders / dna）。SUT 用 `uv` 锁版本。 | `import tuner_testkit`；`tuner-recorder` 等 scripts |
-| 组件层 | `packages/` | **本仓业务资产**（api_objects / page_objects / action_words），不是 kit 运行库。 | 被 import |
-| 工具层 | `apps/` | **本仓私有**工具。公共工具在 `tuner_testkit.apps`。见 `docs/spec/apps-authoring-syntax.md`。 | `python -m apps.<name>`（仅项目工具） |
-| 数据层 | `data/` | 供测试代码读取的结构化测试数据。 | 被读取 |
-| 测试层 | `tests/` | 自动化测试代码（behave `features/` + `pytest/`）。 | behave / pytest |
-| 文档层 | `docs/` | 仓库使用说明与规范（`docs/spec/**`）。 | 只读 |
+| 知识层 | `knowledge/` | 被测系统的知识：`ddl/`（自动区）、`raw/`（原件只读）、`wiki/`（LLM 维护的业务讲解、用例场景、探索、design）、`requirements/`、`defects/`。见 `docs/spec/knowledge-syntax.md`。 | 随被测系统和业务演进 |
+| 资产层 | `assets/` + `packages/` | 测试资产活文档。`assets/` 放 Markdown（`testdesign/`、`testcases/`、`testsheet/`、`testreport/`、`sql/`），`packages/` 放 Python（`api_objects/`、`page_objects/`、`action_words/`）。见 `docs/spec/assets-knowledge-syntax.md`。 | 随测试工作演进 |
+| 工具层 | `apps/` | 本仓私有 CLI 工具，含端口适配器（见 §4）。公共工具在 kit 的 `tuner-*`。见 `docs/spec/apps-authoring-syntax.md`。 | 按需 |
+| 数据层 | `data/` | 测试数据、账号（含角色与权限）、mock。见 `docs/spec/data-syntax.md`。 | 按需 |
+| 测试层 | `tests/` | behave `features/` 与 `pytest/`。 | 按需 |
+| 配置 | `config/` | 「在哪、用什么」：环境、运维通道、端口绑定、执行通道、知识位置。见 §5。 | 按环境 |
+| 文档层 | `docs/` | 规范 `docs/spec/**`、升级说明 `docs/changelog/TEMPLATE-*.md`。 | 随 kit |
 
-配套：`config/`（环境/数据源）、`.cursor/`（AI 组件，见下）、`work/tasks/`（入库的任务上下文，规范 `docs/spec/work-task.md`）、`artifacts/`·`logs/`（运行产出，规范 `docs/spec/artifacts-layout.md`：MCP evidence 落 `artifacts/evidence/<run_id>/`；agent 任务记录落 `artifacts/inbox/`；阻塞式人类提问未回答时落 `artifacts/inbox/questions/`，回答后移到 `artifacts/inbox/archived-question/`；工具运行落 `artifacts/runs/<run_id>/`；回归报告落 `artifacts/reports/<run_id>/`，每个 run 目录带 `manifest.json`）。SUT 登录本机文件：`data/sut-accounts.local.yaml`（gitignore）。
+配套：`work/tasks/`（入库的任务，`docs/spec/work-task.md`）；`artifacts/`（本机产出，gitignore：`evidence/`、`inbox/`、`runs/`、`reports/`、`catalogs/`，见 `docs/spec/artifacts-layout.md`）。
 
 ## 2. 三角色
 
-- **测试工程师**：向 `assets/` 沉淀高置信度的手工经验（SQL / 测试报告 / 业务讲解）；向 `apps/` 用 packages + assets 交给 LLM 按需开发工具。
-- **LLM**：读取 `assets/`、`INDEX.md`（及存在时的 `INDEX.project.md`）作为**生成依据**（防幻觉），协助工程师产出测试与工具；维护对应索引与各类资产。
-- **MCP**（如 Playwright MCP）：读取被测系统页面/网络，供 LLM 探索 SUT、生成 `packages/page_objects`、冻结 `packages/api_objects`。
+- **测试工程师**：提出任务和判断；把高置信度经验沉淀进 `knowledge/` 与 `assets/`；回答阻塞提问（`tuner-task answer`）。
+- **LLM（TestPilot）**：读 `INDEX.project.md`、`knowledge/`、`assets/` 作为生成依据，不凭空编造；按 skill 维护资产并留痕。
+- **通道**：浏览器（`CHANNELS.browser` 选 Playwright MCP 或 Cursor 浏览器）、API（`tuner_testkit.api_test`）、数据库（`tuner_testkit.db`）、端口适配器（如后端日志，见 §4）。
 
-## 3. AI 组件即"平台后端服务"
+## 3. AI 组件
 
-`.cursor/**` 下的 rule / skill / agent / hook 相当于传统测试平台后端 service 里的**业务规则与处理逻辑**，需被版本化并对人类可读。
+`.cursor/**` 下的 rule / skill / agent / hook 相当于测试平台后端的业务规则与处理逻辑，版本化、人可读。
 
-- **想知道当前有哪些规则/技能/编排/钩子、各是什么版本** → 读 [`.cursor/REGISTRY.md`](.cursor/REGISTRY.md)（由 `python -m tuner_testkit.apps.index_ai` 确定性生成）。
-- **组件类型判断口诀**：能确定性脚本化就用 **hook/app**，别用 LLM；是约束就用 **rule**；是流程就用 **skill**；要串流程就用 **agent**。
+- **口诀**：能确定性脚本化就用 hook / app，别用 LLM；是约束就用 rule；是流程就用 skill；要串流程就用 agent。
+- **对外 skill 按三组**（front-matter `group`；其余为 `internal`，由入口 skill 或 agent 调用）：
+  - 知识：`maintain-wiki`、`dump-ddl`、`maintain-defectlib`
+  - 动作：`maintain-testcases`、`maintain-testsheet`、`execute-testsheet`、`generate-test-report`、`maintain-bdd-assets`、`maintain-pytest`
+  - 可用性：`health-check`、`upgrade-framework`、`maintain-config`、`create-app`
 
-## 4. 任务分诊（中立决策树，无 always-on 强制流程）
+## 4. 扩展原则：端口与自定义 apps
 
-拿到任务先判断类型，再选路。**没有任何一条工作流是默认强制的**——BDD 只是能力之一。
+各团队差异大的能力，kit 只定义**端口**（契约），不提供实现。典型是后端日志：有的团队 SSH 进目录，有的走日志平台 API，有的走 Rancher。
+
+- **kit 实现**：通用且稳定的通道（db、api、page、fake、evidence）。
+- **workspace 实现**：端口适配器。按 `docs/spec/apps-authoring-syntax.md` 在 `apps/<name>/` 写 CLI app，`@tool(port="<端口>")` 声明它实现哪个端口，在 `config` 的 `PORTS` 里绑定。契约见 `docs/spec/ports.md`（首个端口 `log-source`）。
+- **流程**：仓库没写明通道时先 `tuner-task ask`（日志主题 `sut-log-source`），**人回答前不选通道、不写实现**。回答后用 `create-app` 按端口契约生成适配器，用 `maintain-config` 写 `PORTS` 与 `OPS`，`health-check` 复检。
+- 同样的思路适用于 Rancher 操作等团队特有的通道：先找 `ports.md` 有没有契约，没有就当普通私有 app。
+- 不是端口的：内容与位置能统一的记录（用例、需求、缺陷）。它们有固定目录、模板与 skill，例如缺陷库 `knowledge/defects/`（`docs/spec/defect-syntax.md`，skill `maintain-defectlib`）。
+
+## 5. 配置原则
+
+`config/` 只回答「在哪、用什么」，是这些信息的唯一来源；`knowledge/wiki` 只解释为什么，引用配置键名，不重复写值。
+
+- 提交的 `config/env.py`（占位与非密钥）被 gitignore 的 `config/env_local.py` 覆盖；多套环境写在 `ENVIRONMENTS`，`tuner-config use <name>` 切换。
+- 分类：被测系统环境（`TEST_UI_BASE_URL`、`TEST_BASE_URL`、`DATABASES`、`TEST_ACCOUNT`）、运维通道 `OPS`、端口绑定 `PORTS`、执行通道 `CHANNELS`、知识位置 `KNOWLEDGE`。字段见 `docs/spec/config-syntax.md`。
+- LLM 判断当前环境与通道只用 `tuner-config show --json`（密钥打码）；改配置走 `maintain-config` skill，改完跑 `tuner-config validate`。
+
+## 6. 任务分诊
+
+拿到任务先判断类型，再选路。没有默认强制的工作流，BDD 只是能力之一。
 
 ```mermaid
 flowchart TD
   Start[任务到达] --> Q{任务类型?}
-  Q -->|"学习被测系统 / 探索式测试"| Learn["SUT 自学习编排\n.cursor/agents/sut-self-learning.md"]
-  Q -->|"业务 UI/API 流自动化"| BDD["BDD 资产流水线（下半程）\n.cursor/agents/bdd-asset-pipeline.md"]
-  Q -->|"明确要求 pytest / 性能 / DB 核对"| Pytest["pytest 路径\n复用 tuner_testkit + packages，不产出 .feature"]
-  Q -->|"需要一个新的独立工具"| App["create-app skill\napps-authoring / apps-handover 规则"]
-  Q -->|"缺少知识(ddl/api/用例)"| Know["先跑 kit CLI 回填 assets\n再走生成"]
-  Q -->|"新建/更新项目仓"| Init["tuner-init / init-content\ntuner-dna / release-template"]
-  Q -->|"读/策展/索引知识"| Idx["查 INDEX.md + maintain-index skill"]
-  Q -->|"发布任务 / 测试设计 / 端到端执行"| Task["work/tasks + tuner-task\ndocs/spec/work-task.md"]
-  Q -->|"生成或维护功能测试用例"| Cases["maintain-testcases skill\ndocs/spec/testcase-syntax.md"]
-  Q -->|"生成或维护测试单"| Sheet["maintain-testsheet skill\nassets/testsheet/"]
+  Q -->|"新仓开场 / 体检 / 缺配置"| Health["health-check\nmaintain-config"]
+  Q -->|"升级 kit 与 DNA"| Upgrade["upgrade-framework"]
+  Q -->|"沉淀被测系统知识"| Know["maintain-wiki / dump-ddl"]
+  Q -->|"记录或回归缺陷"| Defect["maintain-defectlib\nknowledge/defects/"]
+  Q -->|"学习被测系统 / 探索"| Learn["sut-self-learning agent"]
+  Q -->|"功能用例 / 测试单"| Cases["maintain-testcases\nmaintain-testsheet / execute-testsheet"]
+  Q -->|"测试报告"| Report["generate-test-report"]
+  Q -->|"UI/API 流自动化"| BDD["maintain-bdd-assets"]
+  Q -->|"明确要求 pytest / 性能 / DB 核对"| Pytest["maintain-pytest"]
+  Q -->|"发布任务 / 测试设计 / 端到端执行"| Task["tuner-task\ndocs/spec/work-task.md"]
+  Q -->|"差异化通道（日志等）"| Port["tuner-task ask\n人回答后 create-app 实现端口"]
+  Q -->|"需要新工具"| App["create-app"]
 ```
 
-- **学习被测系统** → `.cursor/agents/sut-self-learning.md`（编排 explore → freeze → design；规格 `docs/spec/sut-self-learning.md`；任务 log 见 `docs/spec/agent-task-log.md`）。
-- **业务 UI/API 流** → `.cursor/agents/bdd-asset-pipeline.md`（自学习的**下半程**；内部含三门禁，仅在此分支生效）。
-- **明确 pytest** → 直接写 pytest，复用 `tuner_testkit` 与本仓 `packages/**` 业务资产，不要为满足分层而硬造 Gherkin。
-- **造工具** → `create-app` skill；工具做好按 `apps-handover.mdc` 补交接文档。证据通道（日志/DB 日志取数）也落 `apps/`，遵守 CLI + JSON 输出约定。
-- **补知识** → 用 `tuner-dump-ddl`、Playwright MCP 探索（落盘 `artifacts/evidence/`）、`tuner-recorder` / `tuner-api-recorder` / `tuner-page-recorder` 等回填，再进入生成。
-- **仓库初始化/发布** → `tuner-init scaffold`（骨架 + 依赖 `tuner-testkit` + 一次 `tuner-dna sync`）。开场配置走 `init-content` skill（系统身份、URL、账号、数据库、源码根、日志通道）。发版走 `release-template` skill。下游升 kit：`uv add tuner-testkit==x.y.z` 然后 `tuner-dna sync`，再提交。
-- **读/索引知识** → 先查 `INDEX.md`；若存在 `INDEX.project.md` 则一并查。索引维护用 `maintain-index` skill。
-- **发布任务** → `tuner-task create` 写入 `work/tasks/`。测试设计走 `derive-test-design`；端到端点击报告走 `run-test-execution`。缺人才能决定的通道（如后端日志）用 `tuner-task ask`，不要猜。
-- **功能测试用例** → skill `maintain-testcases`，落在 `assets/testcases/<模块>/<套件>/<用例ID>.md`（规格 `docs/spec/testcase-syntax.md`）。这不是测试设计，也不直接产出 `.feature`。
-- **测试单** → skill `maintain-testsheet`，落在 `assets/testsheet/<轮次>/`。步骤用该目录 `testcase/` 里的用例副本，不链回 `assets/testcases/`。测试单出 GJB438B 测试报告走 skill `generate-testsheet-report`（`tuner-testreport`）。
+- **开场 / 体检**：`health-check` 先跑 `tuner-workspace doctor --json`，缺配置交给 `maintain-config`，只能人定的（日志通道等）走 `tuner-task ask`。
+- **发布任务**：`tuner-task create` 写入 `work/tasks/`。测试设计走 `derive-test-design`，端到端点击报告走 `run-test-execution`。
+- **功能用例**：`maintain-testcases`，落在 `assets/testcases/<模块>/<套件>/<用例ID>.md`，`source` 优先指向 `knowledge/requirements/` 的需求 ID。
+- **测试单**：`maintain-testsheet` 组单，`execute-testsheet` 逐条执行并回写，缺陷用 `maintain-defectlib` 沉淀到 `knowledge/defects/`，报告用 `generate-test-report`。
+- **明确 pytest**：直接写 pytest，不为满足分层硬造 Gherkin。
 
-## 5. 全程硬约束（跨分支）
+## 7. 追溯：对象级 changelog
 
-- 不得将 token / cookie / Authorization / 密码 / session 等敏感信息写入仓库（含 capture 与 api_objects）。
-- 提交遵循 Conventional Commits + 六层 scope，见 `docs/spec/commit-convention.md`（`commit-msg` hook 会校验）。
-- DB 只走 `tuner_testkit.db`，日志只走 `tuner_testkit.logging`（见对应 rule）。
-- 密钥只放本机 `config/env_local.py`、`data/**/*.local.yaml` 或环境变量，**任何分支都不得提交**。多套 prd/uat/dev 写在 `env_local.ENVIRONMENTS` 里，用 `python -m tuner_testkit.config use <name>` 切换（或 `TUNER_ENV`）。探索账号优先 `data/sut-accounts.local.yaml`（模板 `data/sut-accounts.example.yaml`）。
+`artifacts/inbox/` 是本机会话流水，不入库。追溯靠被维护对象自己的记录，随提交入库：
 
-## 6. 分支与下游仓
+- 单元文件（用例、需求、缺陷、wiki 页等）改动时 bump front-matter 的 `version`。
+- 库根目录 `CHANGELOG.md`（wiki 用 `knowledge/wiki/log.md`）每次维护追加一行：`tuner-workspace changelog append`。
+- `tuner-workspace changelog check --staged` 在 pre-commit 校验：动了维护区就要有 changelog 行，改了单元就要 bump 版本。规范见 `docs/spec/metadata-conventions.md` §4。
 
-本公开仓只维护**平台**：`tuner_testkit/`、`.cursor/**`、`docs/spec/**`、`INDEX.md`。
-**本仓不是 workspace**：真正的个人 workspace 是 `tuner-init scaffold` 生成的下游仓。仓内 `dogfood/`
-是用同一 scaffold 生成的 workspace 示范（被测系统 = 平台本身），存放路线图、验收剧本与活文档；
-它是 uv workspace 成员，不带自己的 `.cursor/`（根 DNA 覆盖全树），提交 scope 用 `dogfood`。
+## 8. 全程硬约束
 
-| 分支 | 职责 | 谁改 |
-| --- | --- | --- |
-| `public-main` | 平台主干。框架改动只在这里提交，经 tag 发 PyPI（`tuner-testkit`）+ DNA。 | 平台 |
+- 不得把 token / cookie / Authorization / 密码 / session 写入仓库（含 capture、api_objects、任务、提问、changelog）。
+- 密钥只放 `config/env_local.py`、`data/**/*.local.yaml` 或环境变量。
+- 提交遵循 Conventional Commits 加分层 scope，见 `docs/spec/commit-convention.md`（`commit-msg` hook 校验）。
+- DB 只走 `tuner_testkit.db`，日志只走 `tuner_testkit.logging`，假数据只走 `tuner_testkit.fake`。
+- 不在 `.cursor/`、`docs/spec/`、`AGENTS.md` 里写本仓定制：写进 `*.local.mdc`、`AGENTS.local.md`，否则 `tuner-dna sync --overwrite` 会覆盖。
 
-- **下游 SUT 测试仓**用 `tuner-init scaffold` 从空白目录新建，用 `uv add tuner-testkit==x.y.z` + `tuner-dna sync` 取平台能力。业务资产（`assets/`、objects、features、`INDEX.project.md`）只活在下游仓。
-- 试用中发现框架要改：在 `public-main` 改并提交（内循环可用 `uv tool install --from <this-repo>`）；阶段收口打 tag 发 PyPI，下游再升级。
-- 历史分支 `plane-dogfood` **退役**：分支式 dogfood 验不了 `tuner-init` + PyPI 全链。Plane 的业务测试仓是外部仓（如 `tuner-test-platform-testrepo`）。
-- **「Plane」在本仓只指 dogfood 的被测系统**（plane.so 类项目管理产品）。曾经的 Plane Job / Sync 协议
-  （`@plane_app`、`@plane_*`、`index_platform`）已在 5.0.0 退场，对应能力中立化为 `tuner_testkit.tools`
-  （tool manifest）与 `tuner_testkit.catalog`（`tuner-workspace catalog`）；云端拉取 workspace 属于 D 阶段，
-  见 `dogfood/assets/domain-notes/platform/roadmap.md`。
+<!-- platform-only:begin -->
+## 9. 平台仓与下游仓
+
+本仓维护平台：`tuner_testkit/`（PyPI `tuner-testkit`）、DNA（`.cursor/**`、`docs/spec/**`、`docs/changelog/TEMPLATE-*.md`、`tools/git-hooks/`、`AGENTS.md`）与 `INDEX.md`。
+
+- **本仓不是 workspace**。下游 workspace 用 `tuner-init scaffold` 从空目录新建，`uv add tuner-testkit==x.y.z` 加 `tuner-dna sync --prune` 取平台能力。业务资产只活在下游仓。
+- **DNA 分平台与 workspace 两份视图**：`tuner_testkit/apps/dna/paths.py` 的 `PLATFORM_ONLY_PATHS`（如 `release-template`、`FRAMEWORK.md`）不下发；文本里 `<!-- platform-only:begin -->` 到 `end` 的块在下发时剔除。
+- `dogfood/` 是 scaffold 生成的 workspace 示范（被测系统是平台本身），存放路线图、验收剧本与活文档；它是 uv workspace 成员，不带自己的 `.cursor/`，提交 scope 用 `dogfood`。
+- 平台主干 `public-main`：框架改动只在这里提交，打 tag 发 PyPI。发版走 `release-template` skill，条目写 `docs/changelog/FRAMEWORK.md`，下游升级说明写 `docs/changelog/TEMPLATE-x.y.z.md`。
+- 「Plane」在本仓只指 dogfood 的被测系统。历史的 Plane Job 协议已在 5.0.0 退场，能力中立化为 `tuner_testkit.tools` 与 `tuner_testkit.catalog`；云端拉取 workspace 属于 D 阶段，见 `dogfood/knowledge/wiki/domain-notes/platform/roadmap.md`。
+<!-- platform-only:end -->

@@ -1,0 +1,5 @@
+2026-11-04T09:58:12Z INFO order-service trace=t-1001 POST /api/orders received
+2026-11-04T09:58:12Z INFO order-service trace=t-1001 order 42 created status=PAID
+2026-11-04T10:05:40Z WARN order-service trace=t-1002 refund 42 waiting for payment callback
+2026-11-04T10:06:41Z ERROR order-service trace=t-1002 refund 42 failed: payment callback timeout
+2026-11-04T10:30:00Z INFO order-service trace=t-1003 GET /api/orders/42 200

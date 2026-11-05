@@ -34,7 +34,7 @@ from .steps import Step
 PAGE_CLASSES: dict[str, type["BasePage"]] = {}
 
 
-class BasePage(ABC):
+class BasePage(ABC):  # noqa: B024 -- base for hand-written pages; hooks are optional overrides
     """手写页面对象的基类。对齐 ``tuner_testkit.action_words.base.ActionWord`` 的
     「ClassVar 元数据 + 内嵌 pydantic ``Params`` + 平台化 ``describe()``」范式。"""
 

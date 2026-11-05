@@ -93,14 +93,14 @@ class DbClient:
         if conn is not None:
             try:
                 conn.close()
-            except Exception:
+            except Exception:  # noqa: BLE001 -- closing must not mask the caller's error
                 pass
         engine = self._engine
         self._engine = None
         if engine is not None:
             try:
                 engine.dispose()
-            except Exception:
+            except Exception:  # noqa: BLE001 -- closing must not mask the caller's error
                 pass
 
     def reset_connection(self) -> None:
@@ -110,7 +110,7 @@ class DbClient:
         if conn is not None:
             try:
                 conn.close()
-            except Exception:
+            except Exception:  # noqa: BLE001 -- a dead connection may fail to close; we reopen next
                 pass
         self._ensure_open()
 
@@ -120,13 +120,15 @@ class DbClient:
         if self._connection is None:
             self._connection = self._engine.connect()
             return
+        from sqlalchemy.exc import SQLAlchemyError
+
         try:
             self._connection.exec_driver_sql("SELECT 1").scalar()
             self._connection.rollback()
-        except Exception:
+        except SQLAlchemyError:
             try:
                 self._connection.close()
-            except Exception:
+            except Exception:  # noqa: BLE001 -- the stale connection is replaced below either way
                 pass
             self._connection = self._engine.connect()
 

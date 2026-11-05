@@ -1,6 +1,7 @@
 ---
 name: derive-test-design
-version: 1.0.0
+version: 1.1.0
+group: internal
 description: Write assets/testdesign/<sut>/<slug>.md from a work task plus usecases, domain-notes, explore, or design notes. Use when the task type is test-design or the user asks for a test design. Do not invent click paths that are not in evidence or a cited source.
 ---
 
@@ -9,7 +10,7 @@ description: Write assets/testdesign/<sut>/<slug>.md from a work task plus useca
 ## Scope
 
 - **Write**: `assets/testdesign/<sut>/<slug>.md`，并让任务的 `outputs` 指向它。
-- **Read**: `work/tasks/<id>.md`、`assets/usecases`、`assets/domain-notes`、`assets/explore`、`assets/design`、`INDEX.md`（及 `INDEX.project.md`）。
+- **Read**: `work/tasks/<id>.md`、`knowledge/wiki/usecases`、`knowledge/wiki/domain-notes`、`knowledge/wiki/explore`、`knowledge/wiki/design`、`knowledge/requirements/`、`INDEX.project.md`。
 - **Must follow**: `docs/spec/test-design-syntax.md`、`docs/spec/work-task.md`。
 
 ## Steps
@@ -26,6 +27,7 @@ uv run tuner-workspace meta stamp assets/testdesign/<sut>/<slug>.md --kind testd
 ```
 
 6. 把该路径挂到任务上：`uv run tuner-task bind <TASK> --output assets/testdesign/<sut>/<slug>.md`。
+7. 留痕：`uv run tuner-workspace changelog append --area testdesign --skill derive-test-design --action <新建|更新> --items assets/testdesign/<sut>/<slug>.md --version <1.0.0 或 旧->新>`；改已有设计时 bump `version`。
 
 ## Template
 
@@ -36,7 +38,7 @@ id: <slug>
 title: <一句话>
 sut: <sut>
 task_id: TASK-YYYYMMDD-nnn
-source: <assets/...>
+source: <knowledge/requirements/REQ-… 或 knowledge/wiki/...>
 version: 1.0.0
 confidence: high
 evidence: []
@@ -69,5 +71,5 @@ evidence: []
 
 ## Hard rules
 
-- 缺日志来源时 `tuner-task ask --topic sut-log-source`，不要写死 SSH、日志接口或 Rancher。
+- 需要日志证据时先看 `doctor` 的 `ports.log-source`；没有绑定适配器才 `tuner-task ask --topic sut-log-source`，不要写死 SSH、日志接口或 Rancher。
 - 不把响应体、截图、密钥抄进设计。

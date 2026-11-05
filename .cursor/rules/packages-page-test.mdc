@@ -2,7 +2,7 @@
 description: Require all UI locators to live in tuner_testkit.page_test ElementSpec declarations with multiple fallback candidates; forbid raw page.locator/get_by_* outside page assets
 globs: packages/page_objects/**,tests/features/**,packages/action_words/**
 alwaysApply: false
-version: 1.0.0
+version: 1.1.0
 ---
 
 # tuner_testkit.page_test — mandatory UI locator surface
@@ -45,7 +45,7 @@ from tuner_testkit.page_test import (
 - **id 约定**：`<app>.<page_slug>@v<major>`。破坏性变更才升 major。
 - 页面资产**不做**业务数据拉取、不发 API 请求、不写 SQL（那是 action words / api_objects
   / `tuner_testkit.db` 的职责）。
-- 改动页面资产需有证据：Playwright MCP snapshot、`run_summary`，或
+- 改动页面资产需有证据：浏览器通道 snapshot、`run_summary`，或
   `python -m tuner_testkit.page_test doctor <page_id>` 报告。
 - 新增/修改资产后必须跑 `python -m tuner_testkit.page_test validate`（不启浏览器）。
 
@@ -58,8 +58,8 @@ from tuner_testkit.page_test import (
 ## 用途边界
 
 本地 `PageDriver` 供页面资产自检 / health check / pytest 回归 / doctor 体检。
-BDD 资产生成流程中的**网络证据捕获仍必须走 Playwright MCP**（见
-`bdd-pipeline-gates.mdc` Gate 1），本地 `sync_playwright` 不得替代 MCP。
+BDD 资产生成流程中的**网络证据捕获仍必须走浏览器通道**（config `CHANNELS.browser`，默认 Playwright MCP；
+见 `docs/spec/browser-channel.md` 与 `bdd-pipeline-gates.mdc` Gate 1），本地 `sync_playwright` 不得替代 MCP 通道。
 
 ## Examples
 

@@ -1,7 +1,8 @@
 ---
 name: maintain-testcases
-version: 1.6.0
-description: Creates and updates functional testcases so each case is its own Markdown file under assets/testcases/<module>/<suite>/<Case-ID>.md, with suite notes in that folder's README. Uses a TestLink-style template (summary, preconditions, numbered steps, expected results, status). One maintain-testcases session is one git commit; the body lists each case as 首次创建 or 变更原因 so the IDE Timeline on that file shows the changelog. Use when the user asks to 编写/生成/维护测试用例, add a module or suite, or mentions assets/testcases or a case ID. Do not use for testdesign click-paths or behave .feature files.
+version: 1.7.0
+group: action
+description: Creates and updates functional testcases so each case is its own Markdown file under assets/testcases/<module>/<suite>/<Case-ID>.md, with suite notes in that folder's README. Uses a TestLink-style template (summary, preconditions, numbered steps, expected results, status). Cases trace to knowledge/requirements (REQ ids) and data/accounts. One maintain-testcases session is one commit plus one line per case in assets/testcases/CHANGELOG.md with bumped versions; the commit body lists each case as 首次创建 or 变更原因. Use when the user asks to 编写/生成/维护测试用例, add a module or suite, or mentions assets/testcases or a case ID. Do not use for testdesign click-paths or behave .feature files.
 ---
 
 # Maintain testcases
@@ -15,7 +16,8 @@ description: Creates and updates functional testcases so each case is its own Ma
 ## Before writing
 
 1. 读 `assets/testcases/README.md`、目标模块的 `README.md`、目标套件的 `README.md`（没有就先按下面的模板建）。
-2. 读 `INDEX.md`；存在 `INDEX.project.md` 时一并读。只采用已有 usecase / domain-notes / explore / design，或用户本次给出的事实。
+2. 读 `INDEX.project.md`。依据只采用 `knowledge/requirements/` 的需求、`knowledge/wiki/` 下的 usecase / domain-notes / explore / design，或用户本次给出的事实。
+   用户给的是需求文档原件时，先建议走 `maintain-wiki` 把需求拆成 `REQ-…` 再写用例；用户坚持直接写时照写，`source` 指向原件。
 3. 套件 README 已有 `id_prefix` 就沿用，不要另起缩写。新建套件时用套件名的英文词，每词首字母大写、`-` 连接（`用户登录` → `User-Login`）。确认这个前缀没有被别的套件占用。
 4. 新用例 ID 为 `<id_prefix>-<slug>`，文件名就是 `<用例ID>.md`。`slug` 是测试点的英文短名：小写 kebab-case，2–5 个词，只含 `[a-z0-9]` 与 `-`。从测试点提炼条件，不翻译整段步骤，不加序号，不把正向/反向写进 slug。
 5. 查重：`rg -N "^id: User-Login-valid-credentials$" assets/testcases`。完整 ID 全库唯一。已出现过的 slug 不复用（含已从树里删除、仍被报告或 evidence 引用的 ID）。
@@ -157,7 +159,15 @@ confidence: high
 - 删除：删掉该 `<用例ID>.md`，并从套件用例表去掉这一行。不改其他用例的 ID。
 - 废弃：`status` 改为 `废弃`，在备注写原因。不删除文件，不把 ID 让给新用例，标题不加 `（废弃）`。
 - 拆套件或改套件名：用例带着原 ID 搬家，并改两边 README 的链接。每条用例的 `suite` 改成新目录名。
-- 上面每一种落盘（新建、修改、废弃、删除、搬家）都记在同一次维护的那一个提交里。文件变更日志以 git 为准，不要另写变更日志。
+- 有对应需求时在 front-matter 写 `requirements: [REQ-…]`；用到入库数据或账号时写 `data: [data/<path>, account:<id>]`（`docs/spec/testcase-syntax.md`）。
+- 上面每一种落盘（新建、修改、废弃、删除、搬家）都记在同一次维护的那一个提交里，并在 `assets/testcases/CHANGELOG.md` 每条用例一行：
+
+  ```bash
+  uv run tuner-workspace changelog append --area testcases --skill maintain-testcases \
+    --action <新建|更新|废弃|删除|搬家> --items <用例ID> --version <旧->新 或 1.0.0> --reason "<一句话>"
+  ```
+
+  changelog 是库级摘要，提交正文仍逐条写首次创建或变更原因；pre-commit 的 `changelog check` 会拒绝漏写 changelog 或没 bump 版本的改动。
 
 ## Commit
 
@@ -168,6 +178,7 @@ confidence: high
 这次提交只暂存本次维护动过的路径：
 
 - 新建或修改的 `<用例ID>.md`（含删除）
+- `assets/testcases/CHANGELOG.md`
 - 因此改动的套件 `README.md`、模块 `README.md`、`assets/testcases/README.md`
 - 因此在 `INDEX.project.md` 新增或修改的行
 
@@ -213,4 +224,4 @@ python -m tuner_testkit.testcases assets/testcases
 uv run tuner-workspace meta stamp <改过的.md> --kind <testcase|testcase-suite|testcase-module|testcase-index>
 ```
 
-校验失败就改文件再跑。本次要写的用例都通过后，按 Commit 做这一个提交，然后停。有 `INDEX.project.md` 时在其知识表登记新套件 README 的路径（只读 front-matter），放进同一次提交；平台仓没有业务用例时不要往根 `INDEX.md` 填模块明细。
+校验失败就改文件再跑。本次要写的用例都通过后，按 Commit 做这一个提交，然后停。然后 `uv run tuner-workspace index render` 刷新 `INDEX.project.md` 的 `assets` 自动区，有变化就放进同一次提交（scope 加 `index`）。

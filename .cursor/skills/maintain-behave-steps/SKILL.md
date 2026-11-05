@@ -1,7 +1,8 @@
 ---
 name: maintain-behave-steps
 version: 1.0.0
-description: Creates or updates behave step definitions under tests/features/ui_steps and tests/features/api_steps following behave-step-definitions.md. Use when implementing steps for a feature, deduplicating step phrases, or fixing step failures without leaking implementation details. Do NOT use when the user explicitly requests pytest instead of behave steps.
+group: internal
+description: Internal step (usually reached via maintain-bdd-assets). Creates or updates behave step definitions under tests/features/ui_steps and tests/features/api_steps following behave-step-definitions.md. Use when implementing steps for a feature, deduplicating step phrases, or fixing step failures without leaking implementation details. Do NOT use when the user explicitly requests pytest instead of behave steps.
 ---
 
 # Maintain behave Steps (UI/API layered)

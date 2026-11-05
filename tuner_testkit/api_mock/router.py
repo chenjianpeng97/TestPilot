@@ -48,7 +48,7 @@ class PathPattern:
             return False
         return all(
             _segment_matches(pattern_seg, actual_seg)
-            for pattern_seg, actual_seg in zip(self._segments, actual_segments)
+            for pattern_seg, actual_seg in zip(self._segments, actual_segments, strict=True)
         )
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid

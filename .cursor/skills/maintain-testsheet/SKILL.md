@@ -1,14 +1,15 @@
 ---
 name: maintain-testsheet
-version: 1.1.0
-description: Builds and updates a test sheet under assets/testsheet/<round>/testsheet.md, copying the selected ready cases from assets/testcases into that round's testcase/ folder and linking only those copies. Use when the user asks to 生成测试单, 维护测试单, 测试单, or mentions assets/testsheet or testsheet.md. Do not use to edit the case library, write a testdesign, or curate assets/testreport.
+version: 1.2.0
+group: action
+description: Builds and updates a test sheet under assets/testsheet/<round>/testsheet.md, copying the selected ready cases from assets/testcases into that round's testcase/ folder and linking only those copies. Use when the user asks to 生成测试单, 维护测试单, 测试单, or mentions assets/testsheet or testsheet.md. Executing the sheet and writing results case by case is execute-testsheet. Do not use to edit the case library, write a testdesign, or curate assets/testreport.
 ---
 
 # Maintain testsheet
 
 ## Scope
 
-- **Write**: `assets/testsheet/<轮次>/testsheet.md`，以及同目录 `testcase/` 里的用例副本。
+- **Write**: `assets/testsheet/<轮次>/testsheet.md`，同目录 `testcase/` 里的用例副本，`assets/testsheet/CHANGELOG.md`。
 - **Read**: `assets/testcases/`。有 `INDEX.project.md` 时先读，只采用已有事实。
 - **Out of scope**: 改 `assets/testcases/`（用 `maintain-testcases`）、写 `assets/testdesign/`、写 `assets/testreport/`（测试单出报告用 `generate-testsheet-report`）。已有的 `assets/testreports/**/测试单.md` 不搬，除非用户明确要求迁移。
 
@@ -126,6 +127,15 @@ assets/testsheet/<轮次>/
 - 缺陷只记产品行为。
 - 本轮步骤缺前置或判定规则：改 `testcase/` 里的副本。要沉淀回用例库时另走 `maintain-testcases`，改完不要把测试单的链接改回用例库。
 - 截图放本目录，文件名用用例 ID。一组结果的图放在对应小节下，写成 `![](文件名.png)`。接口 JSON 放 `evidence/`。造数写 `packages/action_words/db_seed/`，不在 `assets/testsheet/` 里放可执行脚本。
+
+## 留痕
+
+组单、增删行、手工回写后各追加一行（逐条执行回写由 `execute-testsheet` 负责并自己写 changelog）：
+
+```bash
+uv run tuner-workspace changelog append --area testsheet --skill maintain-testsheet \
+  --action <组单|更新|移除> --items <轮次> --reason "<共 N 条 / 改了什么>"
+```
 
 ## Hard rules
 

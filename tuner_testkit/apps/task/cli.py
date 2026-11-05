@@ -2,7 +2,7 @@
 
     tuner-task create --type test-design --title "订单创建测试设计"
     tuner-task ask --task TASK-20260924-001 --topic sut-log-source --prompt "仓库没有日志来源"
-    tuner-task answer Q-20260924-001 --option rancher-api --note "见 env_local LOG_SOURCE"
+    tuner-task answer Q-20260924-001 --option rancher-api --note "命名空间见 env_local 的 OPS.rancher"
 """
 
 from __future__ import annotations
@@ -83,7 +83,7 @@ def build_parser() -> argparse.ArgumentParser:
     answer_p.add_argument("question_id")
     answer_p.add_argument("--option", required=True)
     answer_p.add_argument("--note", default="")
-    answer_p.add_argument("--curate", default="", help="assets/domain-notes/**/*.md to append the decision")
+    answer_p.add_argument("--curate", default="", help="knowledge/wiki/domain-notes/**/*.md to append the decision")
     answer_p.add_argument("--root", type=Path, default=None)
 
     questions_p = sub.add_parser("questions", help="list questions (default: open)")

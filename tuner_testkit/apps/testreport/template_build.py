@@ -87,7 +87,7 @@ def _loop_rows(tbl, body_index: int, loop: str, fields: list[str], *, keep_after
         tbl.remove(tr)
     cells = _cells(body)
     _expect(len(cells) == len(fields), f"loop row has {len(cells)} cells, expected {len(fields)}")
-    for tc, expr in zip(cells, fields):
+    for tc, expr in zip(cells, fields, strict=True):
         _set_cell(tc, expr)
     opener = deepcopy(body)
     closer = deepcopy(body)
@@ -236,7 +236,10 @@ def build_template(source: Path, out: Path) -> Path:
         ["{{ r.level }}", "{{ r.req }}", "{{ r.design }}", "{{ r.code }}", "{{ r.doc }}", "{{ r.other }}", "{{ r.closed }}", "{{ r.open }}"],
         keep_after=1,
     )
-    for tc, expr in zip(_cells(total_row)[1:], ["{{ dt.req }}", "{{ dt.design }}", "{{ dt.code }}", "{{ dt.doc }}", "{{ dt.other }}", "{{ dt.closed }}", "{{ dt.open }}"]):
+    total_fields = ["{{ dt.req }}", "{{ dt.design }}", "{{ dt.code }}", "{{ dt.doc }}", "{{ dt.other }}", "{{ dt.closed }}", "{{ dt.open }}"]
+    total_cells = _cells(total_row)[1:]
+    _expect(len(total_cells) == len(total_fields), f"defect total row has {len(total_cells) + 1} cells, expected {len(total_fields) + 1}")
+    for tc, expr in zip(total_cells, total_fields, strict=True):
         _set_cell(tc, expr)
 
     notes = _find_para(doc, bool, "注释正文", after=_heading(doc, "注释"))

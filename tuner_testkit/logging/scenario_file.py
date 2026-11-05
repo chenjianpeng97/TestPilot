@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime
 from pathlib import Path
 
 from .core import (
@@ -69,12 +68,12 @@ class _ScenarioHandlerRegistry:
         logger = get_logger()
         try:
             self._handler.flush()
-        except Exception:
+        except Exception:  # noqa: BLE001 -- best-effort flush before detaching
             pass
         logger.removeHandler(self._handler)
         try:
             self._handler.close()
-        except Exception:
+        except Exception:  # noqa: BLE001 -- best-effort close before detaching
             pass
         self._handler = None
         self._path = None

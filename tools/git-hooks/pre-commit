@@ -1,5 +1,8 @@
 #!/bin/sh
-# Deterministic secret scan over staged files (AGENTS.md §5: no tokens / cookies / passwords in the repo).
+# 1. Deterministic secret scan over staged files (AGENTS.md: no tokens / cookies / passwords in the repo).
+# 2. Object-level changelog check (docs/spec/metadata-conventions.md §4): a change in a maintained
+#    library (testcases, wiki, defects, api_objects …) needs a CHANGELOG line and a version bump.
+#    Emergency bypass for one commit: TUNER_SKIP_CHANGELOG_CHECK=1 git commit …
 # Enable locally with:  git config core.hooksPath tools/git-hooks
 DIR=$(dirname "$0")
 ROOT=$(cd "$DIR/../.." && pwd)
@@ -16,4 +19,13 @@ else
   echo "pre-commit hook: python not found; skipping secret scan." >&2
   exit 0
 fi
-( cd "$ROOT" && "$PY" "$DIR/secret_scan.py" )
+( cd "$ROOT" && "$PY" "$DIR/secret_scan.py" ) || exit 1
+if ( cd "$ROOT" && "$PY" -c "import tuner_testkit.workspace.changelog" ) >/dev/null 2>&1; then
+  OUT=$( cd "$ROOT" && "$PY" -m tuner_testkit.workspace changelog check --staged --root "$ROOT" ) || {
+    echo "$OUT" >&2
+    echo "pre-commit: maintained library changed without a changelog line / version bump." >&2
+    echo "  fix: tuner-workspace changelog append --area <area> ... ; bump front-matter version" >&2
+    exit 1
+  }
+fi
+exit 0

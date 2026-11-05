@@ -145,5 +145,5 @@ class ApiCapturePipeline:
             from tuner_testkit.logging import log_info
 
             log_info(msg)
-        except Exception:
+        except Exception:  # noqa: BLE001 -- logging must never stop a recording session
             print(msg)

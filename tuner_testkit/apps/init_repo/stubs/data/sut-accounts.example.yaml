@@ -1,14 +1,26 @@
 # Copy to data/sut-accounts.local.yaml (gitignored) and fill real values.
-# LLM explore reads the .local file; never commit passwords.
+# LLM explore / execute-testsheet read the .local file; never commit passwords.
+# Tasks, questions, testcases and changelogs refer to an account only by `id`.
+# Field rules: docs/spec/data-syntax.md.
 
 sut: example-app
 ui_base_url: http://localhost:3000
 api_base_url: http://localhost:8000
 accounts:
-  - id: dogfood-admin
+  - id: qa-admin
+    # Role name as the SUT calls it; mirror the role-permission table in
+    # knowledge/wiki/domain-notes/<sut>/roles.md so permission cases can pick accounts.
+    role: admin
+    permissions: ["user:manage", "order:approve"]
     email: you@example.com
     password: "replace-me"
     notes: first-login onboarding / i18n caveats
+  - id: qa-viewer
+    role: viewer
+    permissions: ["order:read"]
+    email: viewer@example.com
+    password: "replace-me"
+    notes: read-only account for negative permission cases
 workspace:
   slug: demo
   name: Demo
