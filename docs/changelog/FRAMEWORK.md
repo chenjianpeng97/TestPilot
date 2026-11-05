@@ -44,6 +44,19 @@
 
 ---
 
+## 2026-11-05 — tuner-testkit 7.0.1（DNA 比对不受换行符影响，CI 跑通）
+
+- **commit**: `769f3aa`（修复）；`997e176`、`aee96b1`（CI）
+- **目的**: Windows（`core.autocrlf=true`）检出 CRLF、Linux 检出 LF。按原始字节算哈希，让 GitHub CI 的清单检查永远失败，
+  也让下游 Windows 克隆里的 DNA 文件全部被当成本地改过。改为按折叠 CRLF 后的内容比较。同时修好 7.0.0 起无法解析的 `ci.yml`。
+- **路径**:
+  - `tuner_testkit/apps/dna/{targets,paths}.py`（`normalize_eol`、`content_digest`；渲染统一 LF；sync / check / prune 兼容 7.0.0 的 CRLF 记录）
+  - `tuner_testkit/apps/init_repo/manifest.py`、`release_manifest.json`
+  - `.github/workflows/ci.yml`（Ruff 步骤名加引号；dogfood 的 behave dry-run 排除 `@wip`）
+  - `docs/changelog/TEMPLATE-7.0.1.md`
+- **不在同步范围**: 下游无需迁移
+- **验证**: 98 个清单哈希与 git blob 逐个一致；`uv run pytest`；dogfood pytest 与 behave；`manifest --check`；GitHub CI 三个 job
+
 ## 2026-11-04 — tuner-testkit 7.0.0（TestPilot：知识层、配置、端口、可用性）
 
 - **commit**: `1e68bbb`

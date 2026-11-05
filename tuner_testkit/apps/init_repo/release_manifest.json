@@ -1,6 +1,6 @@
 {
-  "template_version": "7.0.0",
-  "generated_at": "2026-11-05T10:25:26+0800",
+  "template_version": "7.0.1",
+  "generated_at": "2026-11-05T10:27:39+0800",
   "tracked_paths": [
     ".cursor/rules",
     ".cursor/skills",
@@ -82,6 +82,7 @@
     "docs/changelog/TEMPLATE-6.2.0.md": "e007e6c9d0b67843aeca7620a50aca92db3ec829ca671ab6c4dcfd6b14a446d0",
     "docs/changelog/TEMPLATE-6.3.0.md": "65206808ffb0e5e2863bc8e1a02daa70ee218828b571bdf0493cf66077744745",
     "docs/changelog/TEMPLATE-7.0.0.md": "254611887f1a50b014a2dc0afe688d4df1a053cf04f0e9e73d890e69efe03f7e",
+    "docs/changelog/TEMPLATE-7.0.1.md": "0c208e5b584e6214ded2327c92594d114459c581cf3eae191577b9206f897ba4",
     "docs/spec/action-words-syntax.md": "44ed8af875064e8c422e64eca535c91220fe9eef929d5bca4bc334add78dc799",
     "docs/spec/agent-task-log.md": "3e0fb3e21653e1b6e0c48849c903822aab6d36cc781758dc988e46c98e7771ed",
     "docs/spec/api-objects-syntax.md": "18e3e3ea9ccc8f0b66bd008f0382ea3bbbd351bc1f8eaa8db6a32e5a5ce90d7f",
