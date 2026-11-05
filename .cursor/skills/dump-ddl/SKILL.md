@@ -1,6 +1,6 @@
 ---
 name: dump-ddl
-version: 1.3.0
+version: 1.3.1
 group: knowledge
 description: Dumps live table DDL into knowledge/ddl/<datasource>/ via tuner_testkit/apps/dump_ddl.py, then updates the knowledge index from CHANGELOG. Use when the user says /dump-ddl, dump DDL, 拉取 DDL, 导出表结构, or needs schema files before writing action words / SQL.
 ---
@@ -14,7 +14,7 @@ description: Dumps live table DDL into knowledge/ddl/<datasource>/ via tuner_tes
 - **写范围**：`knowledge/ddl/<datasource>/**`、`knowledge/ddl/CHANGELOG.md`；有
   `INDEX.project.md` §1.1（`tuner-workspace index render` 渲染）。
 - **不写**：`config/env_local.py`（gitignore，永不提交）、token/密码、平台 DNA
-  （`tuner_testkit/db`、`tuner_testkit/apps/dump_ddl.py`）——缺方言支持要先改 `public-main` / `github/main`。
+  （`tuner_testkit/db`、`tuner_testkit/apps/dump_ddl.py`）——缺方言支持要先改平台仓的 `main`。
 - **必须走**：`python -m tuner_testkit.apps.dump_ddl` → `tuner_testkit.db.DbClient`。禁止直连驱动、
   手写 `pg_dump` / `mysqldump` 替代、把密钥写进仓库。
 
@@ -91,7 +91,7 @@ Task Progress:
   拼 DSN、不 `psql`/`mysql` 客户端替代。
 - 日志走 `tuner_testkit.logging`（工具已接好）。不要 `print` 连接串。
 - 不得提交 `config/env_local.py`、`.env`、密码、token。
-- 平台缺 PostgreSQL / 某方言：切到 `public-main`（跟踪 `github/main`）改
+- 平台缺 PostgreSQL / 某方言：切到平台仓的 `main` 改
   `tuner_testkit/db` + `tuner_testkit/apps/dump_ddl.py`，提交后再 `git merge` 进试验田。禁止把平台改动只留在
   `plane-dogfood`。
 - 覆盖式 dump 会改写同名 `.sql`；换库前确认 alias 目录不会混入另一套 SUT。

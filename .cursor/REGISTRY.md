@@ -44,7 +44,7 @@
 
 | 名称 | 分组 | 版本 | 职责 | 文件 |
 | --- | --- | --- | --- | --- |
-| `dump-ddl` | knowledge | 1.3.0 | Dumps live table DDL into knowledge/ddl/<datasource>/ via tuner_testkit/apps/dump_ddl.py, then updates the knowledge in… | `.cursor/skills/dump-ddl/SKILL.md` |
+| `dump-ddl` | knowledge | 1.3.1 | Dumps live table DDL into knowledge/ddl/<datasource>/ via tuner_testkit/apps/dump_ddl.py, then updates the knowledge in… | `.cursor/skills/dump-ddl/SKILL.md` |
 | `maintain-defectlib` | knowledge | 2.0.0 | Records and maintains defects in the repo defect library knowledge/defects/DEF-<yyyymmdd>-<nnn>.md with a fixed templat… | `.cursor/skills/maintain-defectlib/SKILL.md` |
 | `maintain-wiki` | knowledge | 1.0.0 | Maintains the SUT knowledge wiki under knowledge/ in the LLM Wiki style - ingest originals from knowledge/raw into wiki… | `.cursor/skills/maintain-wiki/SKILL.md` |
 | `execute-testsheet` | action | 1.0.0 | Executes a test sheet round under assets/testsheet/<round>/ case by case - guided manual steps with the tester, the con… | `.cursor/skills/execute-testsheet/SKILL.md` |

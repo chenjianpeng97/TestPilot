@@ -44,6 +44,17 @@
 
 ---
 
+## 2026-11-05 — tuner-testkit 7.0.2（平台主干改名为 main）
+
+- **commit**: TBD
+- **目的**: 本地、GitLab、GitHub 只保留一个主干，名字统一为 `main`（原 `public-main`）；文档里的分支名同步。
+- **路径**:
+  - `.cursor/skills/dump-ddl/SKILL.md`（1.3.0 → 1.3.1）
+  - `AGENTS.md`（仅平台专属块，不下发）
+  - `docs/changelog/TEMPLATE-7.0.2.md`
+- **不在同步范围**: 下游无需迁移
+- **验证**: `manifest --check`；`tuner-index-ai --check`；GitHub CI 与发布 workflow
+
 ## 2026-11-05 — tuner-testkit 7.0.1（DNA 比对不受换行符影响，CI 跑通）
 
 - **commit**: `769f3aa`（修复）；`997e176`、`aee96b1`（CI）

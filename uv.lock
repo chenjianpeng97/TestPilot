@@ -1369,7 +1369,7 @@ requires-dist = [{ name = "tuner-testkit", extras = ["all"], editable = "." }]
 
 [[package]]
 name = "tuner-testkit"
-version = "7.0.1"
+version = "7.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
