@@ -38,7 +38,7 @@
 | `packages-logging` | glob | **/*.py | 1.0.0 | Require all run-time logging to go through tuner_testkit.logging | `.cursor/rules/packages-logging.mdc` |
 | `packages-page-test` | glob | packages/page_objects/**,tests/features/**,packages/action_words/** | 1.1.0 | Require all UI locators to live in tuner_testkit.page_test ElementSpec declarations with multiple fallback candidates | `.cursor/rules/packages-page-test.mdc` |
 | `testcases` | glob | assets/testcases/** | 1.6.0 | Functional testcases live one case per file under assets/testcases/<module>/<suite>/<Case-ID>.md | `.cursor/rules/testcases.mdc` |
-| `work-task` | always | all files | 1.2.0 | Work tasks live in work/tasks | `.cursor/rules/work-task.mdc` |
+| `work-task` | always | all files | 1.4.1 | Work tasks live in work/tasks | `.cursor/rules/work-task.mdc` |
 
 ## Skills（操作流程）
 
@@ -47,12 +47,12 @@
 | `dump-ddl` | knowledge | 1.3.1 | Dumps live table DDL into knowledge/ddl/<datasource>/ via tuner_testkit/apps/dump_ddl.py, then updates the knowledge in… | `.cursor/skills/dump-ddl/SKILL.md` |
 | `maintain-defectlib` | knowledge | 2.0.0 | Records and maintains defects in the repo defect library knowledge/defects/DEF-<yyyymmdd>-<nnn>.md with a fixed templat… | `.cursor/skills/maintain-defectlib/SKILL.md` |
 | `maintain-wiki` | knowledge | 1.0.0 | Maintains the SUT knowledge wiki under knowledge/ in the LLM Wiki style - ingest originals from knowledge/raw into wiki… | `.cursor/skills/maintain-wiki/SKILL.md` |
-| `execute-testsheet` | action | 1.2.0 | Executes a test sheet round under assets/testsheet/<round>/ case by case - guided manual steps with the tester, the con… | `.cursor/skills/execute-testsheet/SKILL.md` |
+| `execute-testsheet` | action | 1.3.1 | Executes a test sheet round under assets/testsheet/<round>/ case by case - guided manual steps with the tester, the con… | `.cursor/skills/execute-testsheet/SKILL.md` |
 | `generate-test-report` | action | 1.2.0 | Single entry for test reports | `.cursor/skills/generate-test-report/SKILL.md` |
 | `maintain-bdd-assets` | action | 1.0.0 | Single entry for behave/BDD automation - turns knowledge and testcases into feature sets, reuses or freezes API objects… | `.cursor/skills/maintain-bdd-assets/SKILL.md` |
 | `maintain-pytest` | action | 1.0.0 | Writes and maintains pytest suites under tests/pytest for system, data-check (DB), API contract, performance, and stabi… | `.cursor/skills/maintain-pytest/SKILL.md` |
 | `maintain-testcases` | action | 1.8.0 | Creates and updates functional testcases so each case is its own Markdown file under assets/testcases/<module>/<suite>/… | `.cursor/skills/maintain-testcases/SKILL.md` |
-| `maintain-testsheet` | action | 1.4.0 | Builds and updates a test sheet under assets/testsheet/<round>/testsheet.md, copying the selected ready cases from asse… | `.cursor/skills/maintain-testsheet/SKILL.md` |
+| `maintain-testsheet` | action | 1.5.1 | Builds and updates a test sheet under assets/testsheet/<round>/testsheet.md, copying the selected ready cases from asse… | `.cursor/skills/maintain-testsheet/SKILL.md` |
 | `create-app` | availability | 1.3.1 | Scaffolds a new standalone workspace tool under apps/ that reuses tuner_testkit plus this repo's packages business asse… | `.cursor/skills/create-app/SKILL.md` |
 | `health-check` | availability | 3.0.0 | Checks which basics and which capability prerequisites this TestPilot workspace still lacks - UI and API URLs, database… | `.cursor/skills/health-check/SKILL.md` |
 | `maintain-config` | availability | 1.0.0 | Reads and edits the workspace config (SUT environments and URLs, databases, test account, OPS channels such as Rancher … | `.cursor/skills/maintain-config/SKILL.md` |
@@ -61,12 +61,12 @@
 | `create-action-word` | internal | 1.2.0 | Creates or updates action words under packages/action_words/ following action-words-syntax.md | `.cursor/skills/create-action-word/SKILL.md` |
 | `derive-design-knowledge` | internal | 0.2.0 | Internal step (usually reached via sut-self-learning) | `.cursor/skills/derive-design-knowledge/SKILL.md` |
 | `derive-feature-sets` | internal | 1.0.0 | Internal step (usually reached via maintain-bdd-assets) | `.cursor/skills/derive-feature-sets/SKILL.md` |
-| `derive-test-design` | internal | 1.1.0 | Write assets/testdesign/<sut>/<slug>.md from a work task plus usecases, domain-notes, explore, or design notes | `.cursor/skills/derive-test-design/SKILL.md` |
+| `derive-test-design` | internal | 1.2.0 | Write assets/testdesign/<sut>/<slug>.md from a work task plus usecases, domain-notes, explore, or design notes | `.cursor/skills/derive-test-design/SKILL.md` |
 | `explore-sut` | internal | 1.3.0 | Explore-first session against a live SUT through the configured browser channel (config CHANNELS.browser - Playwright M… | `.cursor/skills/explore-sut/SKILL.md` |
 | `feature-authoring` | internal | 1.0.0 | Internal step (usually reached via maintain-bdd-assets) | `.cursor/skills/feature-authoring/SKILL.md` |
 | `feature-review-lint` | internal | 1.0.0 | Internal step (usually reached via maintain-bdd-assets) | `.cursor/skills/feature-review-lint/SKILL.md` |
 | `freeze-api-objects` | internal | 1.2.1 | Internal step of maintain-bdd-assets / sut-self-learning | `.cursor/skills/freeze-api-objects/SKILL.md` |
-| `generate-testsheet-report` | internal | 1.2.0 | Turns one or more filled test sheets under assets/testsheet/<round>/ into a GJB438B software test report — a reviewed M… | `.cursor/skills/generate-testsheet-report/SKILL.md` |
+| `generate-testsheet-report` | internal | 1.2.1 | Turns one or more filled test sheets under assets/testsheet/<round>/ into a GJB438B software test report — a reviewed M… | `.cursor/skills/generate-testsheet-report/SKILL.md` |
 | `maintain-behave-steps` | internal | 1.0.0 | Internal step (usually reached via maintain-bdd-assets) | `.cursor/skills/maintain-behave-steps/SKILL.md` |
 | `maintain-index` | internal | 2.0.0 | Internal step (usually reached via other skills after they change assets) | `.cursor/skills/maintain-index/SKILL.md` |
 | `maintain-page-objects` | internal | 2.2.1 | Creates or updates page assets under packages/page_objects/ on the tuner_testkit.page_test runtime (PageModel element t… | `.cursor/skills/maintain-page-objects/SKILL.md` |

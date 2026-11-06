@@ -1,6 +1,6 @@
 ---
 name: generate-testsheet-report
-version: 1.2.0
+version: 1.2.1
 group: internal
 description: Turns one or more filled test sheets under assets/testsheet/<round>/ into a GJB438B software test report — a reviewed Markdown at assets/testreport/<sut>/<yyyy-mm>/<slug>.md plus a Word docx rendered by tuner-testreport from the kit GJB438B template into artifacts/runs/. Use when the user asks to 测试单生成测试报告, 出测试报告 docx, GJB438B 报告, 软件测试报告, or mentions a testsheet together with a report. Internal step: usually reached through generate-test-report. Do not use for behave/pytest regression runs or testdesign click reports (run-test-execution).
 ---
@@ -9,7 +9,7 @@ description: Turns one or more filled test sheets under assets/testsheet/<round>
 
 ## Scope
 
-- **Write**: `assets/testreport/<sut>/<yyyy-mm>/<slug>.md`；画像 `assets/testreport/profiles/<sut>.md`；测试单里经用户确认的缺陷列、本轮信息、计数；`work/tasks/TASK-*.md`；`INDEX.project.md`；测试单有改动时 `assets/testsheet/CHANGELOG.md`。
+- **Write**: `assets/testreport/<sut>/<yyyy-mm>/<slug>.md`；画像 `assets/testreport/profiles/<sut>.md`；测试单里经用户确认的缺陷列、本轮信息、计数；`work/tasks/TASK-*/task.md`；`INDEX.project.md`；测试单有改动时 `assets/testsheet/CHANGELOG.md`。
 - **Read**: `assets/testsheet/<轮次>/`（含 `testcase/` 副本）、测试单「依据」引用的文档、画像、`INDEX.project.md`。
 - **Run**: `tuner-testreport`（`stats` / `draft` / `render`），`render` 要 `report` extra；说明见 `tuner-testreport --help` 与平台仓 `tuner_testkit/apps/testreport/README.md`。docx 落 `artifacts/runs/<run_id>/`，不入库。
 - **Out of scope**: 改 `assets/testcases/`（`maintain-testcases`）、改测试单的结果与实测记录（`maintain-testsheet`，结果以测试人填写为准）、改 Word 模板版式。

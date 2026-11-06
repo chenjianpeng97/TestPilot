@@ -136,3 +136,13 @@ def test_cli(tmp_path: Path, capsys) -> None:
     assert '"id": "DEF-20261104-001"' in capsys.readouterr().out
     assert main(["check", str(defects)]) == 1  # placeholders still there
     assert main(["check", str(tmp_path / "nope")]) == 1
+
+
+def test_found_in_survives_testsheet_archiving(tmp_path: Path) -> None:
+    defects = _workspace(tmp_path)
+    (defects / "DEF-20261104-001.md").write_text(FILLED, encoding="utf-8")
+    (defects / "CHANGELOG.md").write_text("# c\n", encoding="utf-8")
+    sheets = tmp_path / "assets" / "testsheet"
+    (sheets / "archived").mkdir()
+    (sheets / "261104订单").rename(sheets / "archived" / "261104订单")
+    assert validate_dir(defects) == []  # found_in 仍写原路径

@@ -53,7 +53,7 @@ catalog 同时用 `git log --diff-filter=A --format=%ae -- <path>` 算首次提�
 
 ### 任务与测试设计
 
-- `kind: task` 落在 `work/tasks/TASK-*.md`，字段见 `docs/spec/work-task.md`。
+- `kind: task` 落在 `work/tasks/TASK-*/task.md`，字段见 `docs/spec/work-task.md`。
 - `kind: question` 未回答落在 `artifacts/inbox/questions/Q-*.md`，回答后移到 `artifacts/inbox/archived-question/`（不入库）。
 - `kind: testdesign` 落在 `assets/testdesign/<sut>/<slug>.md`，字段见 `docs/spec/test-design-syntax.md`。
 - `kind: testcase` 落在 `assets/testcases/<模块>/<套件>/<用例ID>.md`；套件说明是 `testcase-suite`，模块说明是 `testcase-module`，总索引是 `testcase-index`。字段见 `docs/spec/testcase-syntax.md`。

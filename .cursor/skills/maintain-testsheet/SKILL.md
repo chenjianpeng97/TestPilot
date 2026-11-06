@@ -1,6 +1,6 @@
 ---
 name: maintain-testsheet
-version: 1.4.0
+version: 1.5.1
 group: action
 description: Builds and updates a test sheet under assets/testsheet/<round>/testsheet.md, copying the selected ready cases from assets/testcases into that round's testcase/ folder and linking only those copies. Use when the user asks to 生成测试单, 维护测试单, 测试单, or mentions assets/testsheet or testsheet.md. Executing the sheet and writing results case by case is execute-testsheet. Do not use to edit the case library, write a testdesign, or curate assets/testreport.
 ---
@@ -25,6 +25,8 @@ assets/testsheet/<轮次>/
 ```
 
 `<轮次>` 用用户给的目录名。没给就用 `yyMMdd` 加模块名，例如 `260101登录`。一轮一个目录。
+
+做完的轮次归档到 `assets/testsheet/archived/<轮次>/`（见下「归档」）。找「当前轮次」时跳过 `archived/`，它不是一个轮次。
 
 ## Generate
 
@@ -120,7 +122,7 @@ assets/testsheet/<轮次>/
 
 ## Update
 
-- 回写时改 `testsheet.md` 的结果、实测记录、计数和缺陷。结果只用那五个词。
+- 回写时改 `testsheet.md` 的结果、实测记录、计数和缺陷。结果只用四个词（通过、失败、阻塞、忽略），没测的留空。
 - 步骤级的执行情况（卡在哪一步、为什么、缺什么、证据）写在 `testcase/` 副本对应步骤下，格式见 `docs/spec/testsheet-step-record.md`；
   `testsheet.md` 的「实测记录」只写一句摘要。副本里步骤的「操作」「预期」不因执行记录而改动。
 - 增删一行或改了结果后，跑 `uv run tuner-testreport stats assets/testsheet/<轮次> --check`。「共 N 条」和五个计数按它输出的 `rows` 计数改，不手算。它报的取值或缺陷列问题一并改掉。
@@ -129,6 +131,22 @@ assets/testsheet/<轮次>/
 - 缺陷只记产品行为。
 - 本轮步骤缺前置或判定规则：改 `testcase/` 里副本的步骤正文（执行记录之外的部分）。要沉淀回用例库时另走 `maintain-testcases`，改完不要把测试单的链接改回用例库。
 - 截图放本目录，文件名用用例 ID。一组结果的图放在对应小节下，写成 `![](文件名.png)`。接口 JSON 放 `evidence/`。造数写 `packages/action_words/db_seed/`，不在 `assets/testsheet/` 里放可执行脚本。
+
+## 归档
+
+是否归档由用户决定，工具不拦截、不自动归档。用户提出要归档某一轮时，LLM 协助：
+
+```bash
+uv run tuner-testreport archive <轮次> --check   # 预览：只列 warn，不移动
+uv run tuner-testreport archive <轮次>           # 用户确认后：移到 assets/testsheet/archived/<轮次>/，自动写 changelog
+```
+
+- `--check` 输出的 `warn archive …`（还有待执行的用例、阻塞用例、`stats --check` 的 error）要原样告诉用户，问一句「仍要归档吗」。用户说归档就归档，不替用户拒绝。
+- 归档时 warning 会写进 changelog 的 reason，事后可追溯。
+
+- 归档只是搬目录，内容不改。要对已归档的轮次出报告，把路径写成 `assets/testsheet/archived/<轮次>` 传给 `tuner-testreport stats` / `draft`。
+- 缺陷的 `found_in` 仍可写原路径 `assets/testsheet/<轮次>/testsheet.md#D1`，校验会同时认 `archived/` 下的位置。
+- 已归档的轮次不再回写；要重测就新开一轮。
 
 ## 留痕
 

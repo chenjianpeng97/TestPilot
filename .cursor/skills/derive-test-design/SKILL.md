@@ -1,6 +1,6 @@
 ---
 name: derive-test-design
-version: 1.1.0
+version: 1.2.0
 group: internal
 description: Write assets/testdesign/<sut>/<slug>.md from a work task plus usecases, domain-notes, explore, or design notes. Use when the task type is test-design or the user asks for a test design. Do not invent click paths that are not in evidence or a cited source.
 ---
@@ -10,7 +10,7 @@ description: Write assets/testdesign/<sut>/<slug>.md from a work task plus useca
 ## Scope
 
 - **Write**: `assets/testdesign/<sut>/<slug>.md`，并让任务的 `outputs` 指向它。
-- **Read**: `work/tasks/<id>.md`、`knowledge/wiki/usecases`、`knowledge/wiki/domain-notes`、`knowledge/wiki/explore`、`knowledge/wiki/design`、`knowledge/requirements/`、`INDEX.project.md`。
+- **Read**: `work/tasks/<id>/task.md` 及同目录 `attachments/`、`knowledge/wiki/usecases`、`knowledge/wiki/domain-notes`、`knowledge/wiki/explore`、`knowledge/wiki/design`、`knowledge/requirements/`、`INDEX.project.md`。
 - **Must follow**: `docs/spec/test-design-syntax.md`、`docs/spec/work-task.md`。
 
 ## Steps

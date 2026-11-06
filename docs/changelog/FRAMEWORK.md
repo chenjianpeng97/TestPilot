@@ -44,6 +44,17 @@
 
 ---
 
+## 2026-11-06 — tuner-testkit 7.2.0（任务文件夹与附件、任务与测试单归档）
+
+- **目的**: 任务从单文件改为文件夹（`task.md` 加 `attachments/`）；新增任务与测试单的 `archived/` 归档，归档由用户决定，LLM 先 `--check` 提示再协助执行。
+- **路径**:
+  - `tuner_testkit/apps/task/**`、`tuner_testkit/apps/testreport/{archive,cli}.py`、`tuner_testkit/defects/validate.py`
+  - `docs/spec/{work-task,assets-knowledge-syntax,metadata-conventions,commit-convention}.md`
+  - `.cursor/rules/work-task.mdc`、`.cursor/skills/{maintain-testsheet,execute-testsheet,derive-test-design,generate-testsheet-report}/SKILL.md`
+  - `docs/changelog/TEMPLATE-7.2.0.md`
+- **不在同步范围**: 无；下游无需迁移，旧单文件任务照常可用
+- **验证**: `manifest --check`；`tuner-index-ai`；pytest 全量通过；GitHub CI 与发布 workflow
+
 ## 2026-11-05 — tuner-testkit 7.1.0（账号单一来源、测试单四态结果、健康检查按能力分层）
 
 - **目的**: 账号只放 `data/sut-accounts.local.yaml`；测试单结果收敛为 通过/失败/阻塞/忽略；doctor 与 health-check 按能力分层。

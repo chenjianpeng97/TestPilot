@@ -1,6 +1,6 @@
 # task
 
-把人发布的任务写进 Git（`work/tasks/TASK-*.md`），并把必须由人回答的问题写进本机信箱
+把人发布的任务写进 Git（`work/tasks/TASK-*/task.md`，同目录 `attachments/` 放任务附件），并把必须由人回答的问题写进本机信箱
 `artifacts/inbox/questions/`。回答后移到 `artifacts/inbox/archived-question/`。规范：`docs/spec/work-task.md`。
 
 ## 运行方式
@@ -21,8 +21,12 @@ tuner-task answer Q-20260924-001 --option rancher-api \
 
 tuner-task bind TASK-20260924-001 --output assets/testdesign/order/create.md \
   --evidence artifacts/evidence/20260924T000000Z-order/
+tuner-task attach TASK-20260924-001 --file D:/需求补充.md   # 复制到 attachments/
 tuner-task questions
 tuner-task finish TASK-20260924-001
+tuner-task archive TASK-20260924-001 --check   # 预览归档提示（不移动）
+tuner-task archive TASK-20260924-001           # 用户确认后移到 work/tasks/archived/
+tuner-task status --all                  # 连已归档的一起列出
 tuner-task validate assets/testdesign/order/create.md
 ```
 

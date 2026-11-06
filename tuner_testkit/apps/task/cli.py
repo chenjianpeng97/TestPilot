@@ -18,7 +18,9 @@ from tuner_testkit.project import ensure_project_on_path, project_root
 
 from .store import (
     answer_question,
+    archive_task,
     ask_question,
+    attach_file,
     bind_task,
     create_task,
     finish_task,
@@ -41,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tuner-task", description="Record work tasks and blocking human questions.")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    create_p = sub.add_parser("create", help="write work/tasks/TASK-*.md")
+    create_p = sub.add_parser("create", help="write work/tasks/TASK-*/task.md (+ attachments/)")
     create_p.add_argument("--type", required=True, dest="task_type")
     create_p.add_argument("--title", required=True)
     create_p.add_argument("--objective", default="")
@@ -54,6 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     status_p = sub.add_parser("status", help="print one task or every task as JSON")
     status_p.add_argument("task_id", nargs="?")
+    status_p.add_argument("--all", action="store_true", dest="include_archived", help="also list work/tasks/archived/")
     status_p.add_argument("--root", type=Path, default=None)
 
     start_p = sub.add_parser("start", help="mark a task in_progress")
@@ -66,6 +69,17 @@ def build_parser() -> argparse.ArgumentParser:
     bind_p.add_argument("--output", action="append", default=[], dest="outputs")
     bind_p.add_argument("--evidence", action="append", default=[])
     bind_p.add_argument("--root", type=Path, default=None)
+
+    attach_p = sub.add_parser("attach", help="copy a file into the task folder's attachments/")
+    attach_p.add_argument("task_id")
+    attach_p.add_argument("--file", required=True, type=Path)
+    attach_p.add_argument("--name", default="")
+    attach_p.add_argument("--root", type=Path, default=None)
+
+    archive_p = sub.add_parser("archive", help="move a task into work/tasks/archived/ (user decides; --check previews warnings)")
+    archive_p.add_argument("task_id")
+    archive_p.add_argument("--check", action="store_true", help="只列出归档前要告知用户的提示，不移动")
+    archive_p.add_argument("--root", type=Path, default=None)
 
     finish_p = sub.add_parser("finish", help="mark a task done when blocking questions are answered")
     finish_p.add_argument("task_id")
@@ -129,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
             ))
             return 0
         if ns.cmd == "status":
-            payload = show_task(ns.task_id, root=root) if ns.task_id else list_tasks(root=root)
+            payload = show_task(ns.task_id, root=root) if ns.task_id else list_tasks(root=root, include_archived=ns.include_archived)
             _print_json(payload)
             return 0
         if ns.cmd == "start":
@@ -143,6 +157,12 @@ def main(argv: list[str] | None = None) -> int:
                 inputs=ns.inputs,
                 evidence=ns.evidence,
             ))
+            return 0
+        if ns.cmd == "archive":
+            _print_json(archive_task(ns.task_id, root=root, dry_run=ns.check))
+            return 0
+        if ns.cmd == "attach":
+            _print_json(attach_file(ns.task_id, ns.file, root=root, name=ns.name))
             return 0
         if ns.cmd == "finish":
             _print_json(finish_task(ns.task_id, root=root))

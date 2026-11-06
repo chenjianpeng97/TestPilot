@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from tuner_testkit.apps.testreport import cli
 from tuner_testkit.apps.testreport.stats import build
 
@@ -217,3 +219,37 @@ def test_ignored_case_needs_a_reason(sheet_factory, tmp_path: Path) -> None:
     path.write_text(path.read_text(encoding="utf-8").replace("记录Login-Skip-ignored", ""), encoding="utf-8")
     codes = _codes(build([sheet], root=tmp_path))
     assert "ignore_reason" in codes
+
+
+NO_DEFECTS = "| 编号 | 用例 | 现象 | 严重程度 | 类型 | 状态 | 是否阻塞后续 |\n| --- | --- | --- | --- | --- | --- | --- |\n| 无 | | | | | | |\n"
+
+
+def test_archive_moves_finished_round_and_logs(tmp_path: Path) -> None:
+    from tuner_testkit.apps.testreport.archive import archive_sheet
+    from tuner_testkit.apps.testreport.tests.conftest import write_sheet
+
+    write_sheet(tmp_path / "assets" / "testsheet", "261028登录", rows=NEW_ROWS, counts=NEW_COUNTS, total=5, defects=NEW_DEFECTS)
+    result = archive_sheet(tmp_path, "261028登录", author="qa@example.com")
+    assert result["path"] == "assets/testsheet/archived/261028登录"
+    assert not (tmp_path / "assets" / "testsheet" / "261028登录").exists()
+    assert (tmp_path / "assets" / "testsheet" / "archived" / "261028登录" / "testsheet.md").is_file()
+    log = (tmp_path / "assets" / "testsheet" / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "archive" in log and "archived/261028登录" in log
+    with pytest.raises(ValueError, match="already archived"):
+        archive_sheet(tmp_path, "261028登录")
+
+
+def test_archive_warns_about_pending_rows_but_still_moves(tmp_path: Path) -> None:
+    from tuner_testkit.apps.testreport.archive import archive_sheet
+    from tuner_testkit.apps.testreport.tests.conftest import write_sheet
+
+    rows = [("Login-Plain-valid", "正确账号登录", "")]
+    write_sheet(tmp_path / "assets" / "testsheet", "261028登录", rows=rows, counts={}, total=1, defects=NO_DEFECTS)
+    preview = archive_sheet(tmp_path, "261028登录", dry_run=True)
+    assert preview["moved"] is False and any("待执行" in w for w in preview["warnings"])
+    assert (tmp_path / "assets" / "testsheet" / "261028登录" / "testsheet.md").is_file()
+    result = archive_sheet(tmp_path, "261028登录")
+    assert result["moved"] is True and result["path"].startswith("assets/testsheet/archived/")
+    assert "待执行" in (tmp_path / "assets" / "testsheet" / "CHANGELOG.md").read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match="round must be"):
+        archive_sheet(tmp_path, "archived")

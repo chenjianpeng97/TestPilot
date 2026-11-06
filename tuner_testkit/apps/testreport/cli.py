@@ -11,6 +11,7 @@ from typing import Any
 from tuner_testkit.logging import log_error, log_info, log_warn
 from tuner_testkit.project import project_root
 
+from .archive import archive_sheet
 from .stats import build
 
 PACKAGED_TEMPLATE = pathlib.Path(__file__).resolve().parent / "templates" / "gjb438b.docx"
@@ -203,6 +204,23 @@ def cmd_build_template(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_archive(args: argparse.Namespace) -> int:
+    try:
+        result = archive_sheet(args.root, args.round, dry_run=args.check)
+    except (OSError, ValueError) as exc:
+        log_error("testsheet_archive_failed", error=f"{type(exc).__name__}: {exc}")
+        _emit(f"error {exc}")
+        return 1
+    for warning in result["warnings"]:
+        _emit(f"warn archive {warning}")
+    if result["moved"]:
+        log_info("testsheet_archived", path=result["path"])
+        _emit(f"archived round={result['round']} path={result['path']}")
+    else:
+        _emit(f"would-archive round={result['round']} path={result['path']} warnings={len(result['warnings'])}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tuner-testreport",
@@ -228,6 +246,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_draft.add_argument("--force", action="store_true", help="覆盖已存在的报告")
     p_draft.add_argument("--json", action="store_true", help="最后一行输出 envelope JSON")
     p_draft.set_defaults(func=cmd_draft)
+
+    p_arc = sub.add_parser("archive", help="move a round into assets/testsheet/archived/ (user decides; --check previews warnings)")
+    p_arc.add_argument("round", help="assets/testsheet/ 下的轮次目录名")
+    p_arc.add_argument("--check", action="store_true", help="只列出归档前要告知用户的提示，不移动")
+    p_arc.set_defaults(func=cmd_archive)
 
     p_render = sub.add_parser("render", help="render the report Markdown into docx under artifacts/runs/")
     p_render.add_argument("report", help="assets/testreport/<sut>/<yyyy-mm>/<slug>.md")

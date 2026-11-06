@@ -35,6 +35,8 @@
 ```text
 uv run tuner-testreport --help
 uv run tuner-testreport stats assets/testsheet/<轮次> --check
+uv run tuner-testreport archive 260101登录 --check   # 预览归档提示
+uv run tuner-testreport archive 260101登录           # 用户确认后移到 assets/testsheet/archived/
 uv run tuner-testreport draft assets/testsheet/<轮次> --sut <sut> --slug <slug> [--env <env>] [--task TASK-…]
 uv run --extra report tuner-testreport render assets/testreport/<sut>/<yyyy-mm>/<slug>.md [--template <模板.docx>]
 uv run --extra report tuner-testreport build-template <样例报告.docx> --out data/testreport/<名称>.docx

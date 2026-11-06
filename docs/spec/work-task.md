@@ -1,6 +1,6 @@
 ---
 name: work-task
-version: 1.1.0
+version: 1.3.1
 description: 入库任务 work/tasks、阻塞式人类提问，以及和测试设计、证据、测试报告的闭环。
 ---
 
@@ -13,12 +13,25 @@ description: 入库任务 work/tasks、阻塞式人类提问，以及和测试�
 ## 1. 路径
 
 ```text
-work/tasks/TASK-<YYYYMMDD>-<nnn>.md          # 入库
+work/tasks/TASK-<YYYYMMDD>-<nnn>/             # 入库：一个任务一个文件夹
+  task.md                                   # 主文件，front-matter 与章节见 §3
+  attachments/                              # 附件：需求截图、客户邮件、接口样例、导出表……
+work/tasks/archived/TASK-<YYYYMMDD>-<nnn>/    # 已完成任务的归档，结构同上
 artifacts/inbox/questions/Q-<YYYYMMDD>-<nnn>.md        # 未回答；gitignore
 artifacts/inbox/archived-question/Q-<YYYYMMDD>-<nnn>.md # 已回答；gitignore
 ```
 
-`work/**` 的提交 scope 是 `work`。问题文件不入库；人答完后的结论写回任务的 `## Decisions`，需要留下的通道说明再策展到 `knowledge/wiki/domain-notes/`。
+`work/**` 的提交 scope 是 `work`。
+
+### 任务文件夹与附件
+
+- `tuner-task create` 生成 `TASK-x/task.md` 和空的 `attachments/`。`task.md` 是唯一的状态来源，CLI 只改它。
+- 附件由人手动放进 `attachments/`，或由 LLM 用 `tuner-task attach <id> --file <路径> [--name 子路径]` 复制进去（可带子目录，不覆盖同名文件）。人直接拷文件也行，`status` 的 JSON 会列出 `attachments`。
+- 附件是任务的原始素材，不是证据：运行产生的截图、网络、日志仍走 `artifacts/evidence/` 并用 `bind --evidence` 指向。
+- 附件入库，所以不能含密码、token、Cookie；`attach` 会拒绝带这类赋值的文本文件，二进制文件由人自己把关。
+- 任务正文用相对路径引用附件，例如 `[客户补充](attachments/需求补充.md)`。
+- 任务用 `tuner-task archive <id>` 移到 `work/tasks/archived/`，避免活跃任务堆积。**是否归档由用户决定**，CLI 不拦截任何状态，不会自动归档（`finish` 也不会）。LLM 协助归档：先 `tuner-task archive <id> --check` 预览，把 `warnings`（未 done、还有未答的阻塞问题）告诉用户，用户确认后再执行。归档后 `status <id>` 仍能查到，`status --all` 才会列出已归档的任务，编号不会被复用。
+- 旧的单文件 `TASK-x.md` 继续可读可写；对它执行 `attach` 时会先移成 `TASK-x/task.md`。问题文件不入库；人答完后的结论写回任务的 `## Decisions`，需要留下的通道说明再策展到 `knowledge/wiki/domain-notes/`。
 
 ## 2. 任务类型
 

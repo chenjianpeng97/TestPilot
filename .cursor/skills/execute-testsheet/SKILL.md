@@ -1,6 +1,6 @@
 ---
 name: execute-testsheet
-version: 1.2.0
+version: 1.3.1
 group: action
 description: Executes a test sheet round under assets/testsheet/<round>/ case by case - guided manual steps with the tester, the configured browser channel, or existing action words / page objects / API objects - and writes back results (通过 / 失败 / 阻塞 / 忽略), observations, evidence, and defects, then checks counts with tuner-testreport stats. Use when the user says 执行测试单, 跑测试单, execute-testsheet, 回归这一轮, or wants results filled into a testsheet.
 ---
@@ -64,7 +64,8 @@ description: Executes a test sheet round under assets/testsheet/<round>/ case by
    ```
 3. 有缺陷时接着用 `maintain-defectlib` 把每个 `D<n>` 记录成 `knowledge/defects/DEF-…`（固定模板，`python -m tuner_testkit.defects new`），
    回归已有缺陷时更新原文件；本轮测完要出报告时走 `generate-test-report`。
-4. 一次执行会话一个提交，scope `assets`（如 `test(assets): execute 261104订单 round 1`）。
+4. 执行完后可以问用户是否归档该轮（`maintain-testsheet` 的「归档」）。是否归档由用户决定，不要自动归档，也不要往 `archived/` 下的轮次回写。
+5. 一次执行会话一个提交，scope `assets`（如 `test(assets): execute 261104订单 round 1`）。
 
 ## Hard rules
 

@@ -22,6 +22,7 @@ assets/
 ├── testsheet/<轮次>/testsheet.md                   # 一次测试单。步骤链接本目录副本
 ├── testsheet/<轮次>/testcase/<模块>/<套件>/<用例ID>.md  # 从用例库复制的本次步骤
 ├── testsheet/<轮次>/evidence/                      # 手工执行的截图等
+├── testsheet/archived/<轮次>/                      # 已完成轮次的归档，结构同上（tuner-testreport archive）
 ├── testreport/<sut>/<yyyy-mm>/<slug>.md            # 测试报告（整理稿，入库）
 └── testreport/profiles/<sut>.md                    # 报告画像：不随轮次变化的报告字段（tuner-testreport draft 读取）
 ```

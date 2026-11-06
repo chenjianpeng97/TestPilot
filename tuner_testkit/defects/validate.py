@@ -116,6 +116,14 @@ def check_defect(path: Path, workspace: Path) -> tuple[list[str], dict[str, Any]
     return errors, meta
 
 
+def _sheet_exists(workspace: Path, target: str) -> bool:
+    """found_in keeps working after the round moved to assets/testsheet/archived/."""
+    if (workspace / target).is_file():
+        return True
+    tail = target[len("assets/testsheet/") :]
+    return not tail.startswith("archived/") and (workspace / "assets" / "testsheet" / "archived" / tail).is_file()
+
+
 def _check_links(meta: dict[str, Any], rel: str, workspace: Path) -> list[str]:
     errors: list[str] = []
     found_in = str(meta.get("found_in") or "")
@@ -125,7 +133,7 @@ def _check_links(meta: dict[str, Any], rel: str, workspace: Path) -> list[str]:
         target, _, anchor = found_in.partition("#")
         if not target.startswith("assets/testsheet/"):
             errors.append(f"{rel}: found_in must point into assets/testsheet/ or be /")
-        elif not (workspace / target).is_file():
+        elif not _sheet_exists(workspace, target):
             errors.append(f"{rel}: found_in {target} does not exist")
         if anchor and not re.fullmatch(r"D\d+", anchor):
             errors.append(f"{rel}: found_in anchor must be the testsheet defect number, e.g. #D1")

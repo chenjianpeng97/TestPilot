@@ -85,7 +85,7 @@ flowchart TD
 ```
 
 - **开场 / 体检**：`health-check` 先跑 `tuner-workspace doctor --json`，先看 `core` 基础项（地址、数据库、账号、浏览器通道等），再看 `capabilities`（各功能需要的配置：源码仓、后端日志、API 文档等是否就绪），按用户要用的功能补缺口，配置交给 `maintain-config`，只能人定的走 `tuner-task ask`。
-- **发布任务**：`tuner-task create` 写入 `work/tasks/`。测试设计走 `derive-test-design`，端到端点击报告走 `run-test-execution`。
+- **发布任务**：`tuner-task create` 写入 `work/tasks/TASK-*/`（`task.md` 加 `attachments/`）。测试设计走 `derive-test-design`，端到端点击报告走 `run-test-execution`。
 - **功能用例**：`maintain-testcases`，落在 `assets/testcases/<模块>/<套件>/<用例ID>.md`，`source` 优先指向 `knowledge/requirements/` 的需求 ID。
 - **测试单**：`maintain-testsheet` 组单，`execute-testsheet` 逐条执行并回写，缺陷用 `maintain-defectlib` 沉淀到 `knowledge/defects/`，报告用 `generate-test-report`。
 - **明确 pytest**：直接写 pytest，不为满足分层硬造 Gherkin。

@@ -6,6 +6,7 @@ Spec: ``docs/spec/work-task.md``.
 from __future__ import annotations
 
 import re
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,24 @@ def tasks_dir(root: Path) -> Path:
     return root / "work" / "tasks"
 
 
+TASK_FILE = "task.md"
+ATTACHMENTS = "attachments"
+_TEXT_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".log", ".csv", ".sql", ".xml", ".html", ".ini", ".toml"}
+
+
+def task_dir(root: Path, task_id: str) -> Path:
+    """Folder form of a task: work/tasks/<id>/ with task.md and attachments/."""
+    return tasks_dir(root) / task_id
+
+
+ARCHIVED = "archived"
+
+
+def archived_tasks_dir(root: Path) -> Path:
+    """Finished tasks live here: work/tasks/archived/TASK-x/ (or the legacy TASK-x.md)."""
+    return tasks_dir(root) / ARCHIVED
+
+
 def questions_dir(root: Path) -> Path:
     return root / "artifacts" / "inbox" / "questions"
 
@@ -77,7 +96,9 @@ def _next_question_id(repo: Path) -> str:
 def _next_seq(directory: Path, prefix: str, day: str) -> str:
     directory.mkdir(parents=True, exist_ok=True)
     pat = re.compile(rf"^{re.escape(prefix)}-{day}-(\d+)$")
-    nums = [int(m.group(1)) for path in directory.glob(f"{prefix}-{day}-*.md") if (m := pat.match(path.stem))]
+    # 文件夹形态（TASK-x/）与旧的单文件形态（TASK-x.md）都占编号
+    dirs = [directory, directory / ARCHIVED]  # 已归档的编号也不复用
+    nums = [int(m.group(1)) for d in dirs if d.is_dir() for path in d.glob(f"{prefix}-{day}-*") if (m := pat.match(path.stem))]
     return f"{prefix}-{day}-{max(nums, default=0) + 1:03d}"
 
 
@@ -102,10 +123,27 @@ def _rel(root: Path, raw: str) -> Path:
 
 
 def _task_path(root: Path, task_id: str) -> Path:
-    path = tasks_dir(root) / f"{task_id}.md"
-    if not path.is_file():
-        raise FileNotFoundError(path)
-    return path
+    """task.md of the folder form, falling back to the legacy single file TASK-x.md."""
+    for base in (tasks_dir(root), archived_tasks_dir(root)):
+        folder = base / task_id / TASK_FILE
+        if folder.is_file():
+            return folder
+        legacy = base / f"{task_id}.md"
+        if legacy.is_file():
+            return legacy
+    raise FileNotFoundError(task_dir(root, task_id) / TASK_FILE)
+
+
+def _task_ref(repo: Path, task_id: str) -> str:
+    return _task_path(repo, task_id).relative_to(repo).as_posix()
+
+
+def _attachments(path: Path) -> list[str]:
+    """Files under <task>/attachments/ (folder form only), relative to the task folder."""
+    folder = path.parent / ATTACHMENTS
+    if path.name != TASK_FILE or not folder.is_dir():
+        return []
+    return sorted(p.relative_to(path.parent).as_posix() for p in folder.rglob("*") if p.is_file() and p.name != ".gitkeep")
 
 
 def _question_path(root: Path, question_id: str) -> Path:
@@ -169,7 +207,9 @@ def create_task(
         f"{meta['objective'] or '（未写）'}\n\n"
         "## Decisions\n"
     )
-    path = tasks_dir(repo) / f"{task_id}.md"
+    path = task_dir(repo, task_id) / TASK_FILE
+    (path.parent / ATTACHMENTS).mkdir(parents=True, exist_ok=True)
+    (path.parent / ATTACHMENTS / ".gitkeep").write_text("", encoding="utf-8")
     path.write_text(dump_front_matter(meta) + body, encoding="utf-8", newline="\n")
     stamp_file(repo, path, kind="task", author=meta["author"] or None)
     return {"id": task_id, "path": path.relative_to(repo).as_posix(), "status": "open", "type": task_type}
@@ -186,16 +226,22 @@ def _summary(meta: dict[str, Any], path: Path, root: Path) -> dict[str, Any]:
         "questions": _as_list(meta.get("questions")),
         "evidence": _as_list(meta.get("evidence")),
         "outputs": _as_list(meta.get("outputs")),
+        "attachments": _attachments(path),
+        "archived": ARCHIVED in path.relative_to(root).parts,
     }
 
 
-def list_tasks(*, root: Path | None = None) -> list[dict[str, Any]]:
+def list_tasks(*, root: Path | None = None, include_archived: bool = False) -> list[dict[str, Any]]:
     repo = Path(root) if root is not None else project_root()
-    directory = tasks_dir(repo)
-    if not directory.is_dir():
-        return []
     rows = []
-    for path in sorted(directory.glob("TASK-*.md")):
+    paths: list[Path] = []
+    bases = [tasks_dir(repo)] + ([archived_tasks_dir(repo)] if include_archived else [])
+    for directory in bases:
+        if not directory.is_dir():
+            continue
+        paths += [p / TASK_FILE for p in directory.glob("TASK-*") if p.is_dir() and (p / TASK_FILE).is_file()]
+        paths += list(directory.glob("TASK-*.md"))  # 旧的单文件任务
+    for path in sorted(paths, key=lambda p: (p.parent.name if p.name == TASK_FILE else p.stem)):
         meta, _ = _read(path)
         rows.append(_summary(meta, path, repo))
     return rows
@@ -267,6 +313,75 @@ def bind_task(
     meta["updated"] = _today()
     _write(path, meta, text)
     return show_task(task_id, root=repo)
+
+
+def attach_file(
+    task_id: str,
+    source: Path,
+    *,
+    root: Path | None = None,
+    name: str = "",
+) -> dict[str, Any]:
+    """Copy a file into <task>/attachments/. A legacy single-file task is moved into its folder first."""
+    repo = Path(root) if root is not None else project_root()
+    path = _task_path(repo, task_id)
+    meta, _ = _read(path)
+    if meta.get("status") == "done":
+        raise ValueError(f"{task_id} is done")
+    src = Path(source)
+    if not src.is_file():
+        raise ValueError(f"attachment is not a file: {source}")
+    target_name = (name or src.name).replace("\\", "/").strip("/")
+    if not target_name or ".." in target_name.split("/"):
+        raise ValueError(f"bad attachment name: {name or src.name}")
+    if src.suffix.lower() in _TEXT_SUFFIXES:
+        assert_no_secret(src.read_text(encoding="utf-8", errors="ignore"))
+    if path.name != TASK_FILE:  # legacy: TASK-x.md -> TASK-x/task.md
+        folder = task_dir(repo, task_id)
+        folder.mkdir(parents=True, exist_ok=True)
+        moved = folder / TASK_FILE
+        path.replace(moved)
+        path = moved
+    dest = path.parent / ATTACHMENTS / target_name
+    if dest.exists():
+        raise ValueError(f"attachment already exists: {dest.relative_to(repo).as_posix()}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, dest)
+    (path.parent / ATTACHMENTS / ".gitkeep").unlink(missing_ok=True)
+    return {"id": task_id, "attached": dest.relative_to(repo).as_posix(), "path": path.relative_to(repo).as_posix()}
+
+
+def archive_task(task_id: str, *, root: Path | None = None, dry_run: bool = False) -> dict[str, Any]:
+    """Move a task (folder or legacy file) into work/tasks/archived/.
+
+    Archiving is the user's decision, so any status is allowed. ``warnings`` lists what the user
+    should hear first (not done, open blocking questions). ``dry_run`` reports and moves nothing.
+    """
+    repo = Path(root) if root is not None else project_root()
+    path = _task_path(repo, task_id)
+    if ARCHIVED in path.relative_to(repo).parts:
+        raise ValueError(f"{task_id} is already archived")
+    meta, _ = _read(path)
+    warnings: list[str] = []
+    if meta.get("status") != "done":
+        warnings.append(f"任务状态是 {meta.get('status')}，还没有 done")
+    pending = _open_blocking(repo, _as_list(meta.get("questions")))
+    if pending:
+        warnings.append(f"还有未回答的阻塞问题：{', '.join(pending)}")
+    source = path.parent if path.name == TASK_FILE else path
+    dest_dir = archived_tasks_dir(repo)
+    dest = dest_dir / source.name
+    if dest.exists():
+        raise ValueError(f"already exists: {dest.relative_to(repo).as_posix()}")
+    if dry_run:
+        row = show_task(task_id, root=repo)
+        row.update(warnings=warnings, moved=False)
+        return row
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(source), str(dest))
+    row = show_task(task_id, root=repo)
+    row.update(warnings=warnings, moved=True)
+    return row
 
 
 def finish_task(task_id: str, *, root: Path | None = None) -> dict[str, Any]:
@@ -414,7 +529,7 @@ def _curate(repo: Path, rel: str, *, task_id: str, question_id: str, topic: str,
         f"\n## {question_id} {topic}\n\n"
         f"- option: {option}\n"
         f"- note: {note or '无'}\n"
-        f"- task: work/tasks/{task_id}.md\n"
+        f"- task: {_task_ref(repo, task_id)}\n"
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.is_file():
@@ -423,7 +538,7 @@ def _curate(repo: Path, rel: str, *, task_id: str, question_id: str, topic: str,
         meta = {
             "kind": "domain-note",
             "title": path.stem,
-            "source": f"work/tasks/{task_id}.md",
+            "source": _task_ref(repo, task_id),
             "confidence": "high",
             "task_id": task_id,
         }
