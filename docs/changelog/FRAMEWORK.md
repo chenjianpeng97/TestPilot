@@ -44,9 +44,9 @@
 
 ---
 
-## 2026-11-08 — 工作台看板（tuner-dashboard 离线统计 + refresh-dashboard skill，未发版）
+## 2026-11-08 — tuner-testkit 7.3.0（工作台看板：离线统计 + 只读展示）
 
-- **commit**: `TBD`
+- **commit**: `c500de3`（功能）+ 本提交（发版）
 - **目的**: 工作台首页改成只读看板（测试资产、自动化覆盖、工具、工作台自检、被测系统配置），并解决早期看板在请求里汇总文件系统导致的卡顿：统计挪到离线 app `tuner-dashboard`，由新 skill `refresh-dashboard` 手动触发；工作台只读结果文件，按 mtime 缓存。
 - **路径**:
   - `tuner_testkit/apps/dashboard/**`（新 app；`pyproject.toml` 注册 `tuner-dashboard`）
