@@ -28,6 +28,22 @@ from tuner_testkit.workbench.kinds import known_word_kind
 PACKAGE_DIR = Path(__file__).resolve().parent
 
 
+def _static_version() -> str:
+    """Cache-bust token for ``/static/*`` (mtime; falls back to kit version).
+
+    Browsers cache ``/static/app.css`` across kit upgrades. Without a changing
+    query string, an old stylesheet keeps applying and the new layout/sidebar
+    classes look unstyled.
+    """
+    css = PACKAGE_DIR / "static" / "app.css"
+    try:
+        return str(int(css.stat().st_mtime))
+    except OSError:
+        from tuner_testkit import __version__
+
+        return __version__
+
+
 def create_app(*, root: Path | None = None) -> FastAPI:
     repo = Path(root).resolve() if root is not None else project_root()
     templates = Jinja2Templates(directory=str(PACKAGE_DIR / "templates"))
@@ -36,6 +52,7 @@ def create_app(*, root: Path | None = None) -> FastAPI:
     if static.is_dir():
         app.mount("/static", StaticFiles(directory=str(static)), name="static")
     app.state.root = repo
+    static_v = _static_version()
     os.environ["TUNER_ROOT"] = str(repo)
 
     def directory(*, refresh: bool = False) -> dict[str, Any]:
@@ -55,7 +72,9 @@ def create_app(*, root: Path | None = None) -> FastAPI:
     app.state.dashboard = dashboard
 
     def _render(request: Request, name: str, **ctx: Any) -> HTMLResponse:
-        return templates.TemplateResponse(request, name, {"root": str(repo), "dash_pages": PAGES, **ctx})
+        return templates.TemplateResponse(
+            request, name, {"root": str(repo), "dash_pages": PAGES, "static_v": static_v, **ctx}
+        )
 
     @app.get("/", response_class=HTMLResponse)
     def home(request: Request) -> HTMLResponse:

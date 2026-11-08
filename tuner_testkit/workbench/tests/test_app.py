@@ -77,6 +77,8 @@ def test_home_is_dashboard_with_nav(client) -> None:
     assert "造数" in html
     assert "工具" in html
     assert "ddl_tables" not in html
+    # Cache-bust so a kit upgrade does not keep serving a stale app.css.
+    assert 'href="/static/app.css?v=' in html
 
 
 DASH_PAGES = ("assets", "automation", "tools", "doctor", "config")

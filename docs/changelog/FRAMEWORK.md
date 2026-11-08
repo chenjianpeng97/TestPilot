@@ -44,6 +44,16 @@
 
 ---
 
+## 2026-11-08 — tuner-testkit 7.3.1（工作台 CSS 缓存破坏）
+
+- **commit**: `75b50f2`
+- **目的**: 升级到 7.3.0 后，浏览器仍缓存旧的 `/static/app.css`，新侧栏与看板卡片类名没有样式（顶栏绿条还在，导航与数字变成蓝链）。样式表改为 `app.css?v=<mtime>`，kit 升级或改 CSS 后自动换查询串。
+- **路径**:
+  - `tuner_testkit/workbench/{app.py,templates/base.html,tests/test_app.py}`
+  - `docs/changelog/TEMPLATE-7.3.1.md`
+- **不在同步范围**: 无；下游升级后重启工作台，必要时 Ctrl+F5
+- **验证**: pytest workbench 15 通过
+
 ## 2026-11-08 — tuner-testkit 7.3.0（工作台看板：离线统计 + 只读展示）
 
 - **commit**: `c500de3`（功能）+ 本提交（发版）
