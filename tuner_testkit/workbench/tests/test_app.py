@@ -92,7 +92,6 @@ def _forbid_collecting(monkeypatch: pytest.MonkeyPatch) -> None:
 
     for name in ("collect", "collect_assets", "collect_automation", "collect_tools", "collect_doctor", "collect_config"):
         monkeypatch.setattr(collect_mod, name, boom)
-    monkeypatch.setattr("tuner_testkit.workbench.app.build_catalog", boom)
     monkeypatch.setattr("tuner_testkit.workbench.app.build_directory", boom)
 
 
@@ -194,19 +193,12 @@ def test_dashboard_without_any_results(tmp_path: Path, monkeypatch: pytest.Monke
         assert client.get(f"/dashboard/{page}").status_code == 200, page
 
 
-def test_knowledge_catalog_is_built_once(client, monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[int] = []
-
-    def fake_catalog(*_a, **_k):
-        calls.append(1)
-        return {"knowledge": {"assets": []}, "artifacts": {"inbox": {}}, "tests": {"features": []}}
-
-    monkeypatch.setattr("tuner_testkit.workbench.app.build_catalog", fake_catalog)
-    assert client.get("/knowledge").status_code == 200
-    assert client.get("/knowledge").status_code == 200
-    assert len(calls) == 1
-    assert client.get("/knowledge", params={"refresh": 1}).status_code == 200
-    assert len(calls) == 2
+def test_knowledge_page_is_gone(client) -> None:
+    assert client.get("/knowledge").status_code == 404
+    assert client.get("/api/catalog").status_code == 404
+    html = client.get("/").text
+    assert ">知识<" not in html
+    assert 'href="/knowledge"' not in html
 
 
 def test_db_seed_specialized_page_has_example(client) -> None:

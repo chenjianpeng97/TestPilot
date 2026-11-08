@@ -14,7 +14,7 @@
 
 ## 试用场景
 
-- 适用：本机看看板、浏览工具目录、填表单、看运行日志、知识条目与 AI 组件（rule / skill / agent / hook）。
+- 适用：本机看看板、浏览工具目录、填表单、看运行日志、AI 组件（rule / skill / agent / hook）。
 - 不适用：对外网暴露、当企业平台、替代理写业务工具。
 - 前置：在 workspace 根（或 `--root`）运行；依赖 `tuner-testkit[workbench]`（含 fastapi / uvicorn / jinja2）。
 
@@ -27,9 +27,6 @@
 - 本机没有 JSON 时退回入库的 `DASHBOARD.md` 计数，并提示「本机尚未统计」。
 - 每页标出「统计于 X（N 分钟前）」；页面上没有刷新按钮，要新数字就让 AI 执行 `refresh-dashboard`。
 - 路由：`/`（概览）、`/dashboard/assets|automation|tools|doctor|config`、`GET /api/dashboard`。
-
-其它耗时操作也不在请求里同步做：启动时 `artifacts/catalogs/workspace.json` 在后台线程刷新；
-`/knowledge` 首次访问才构建 catalog，之后复用，`?refresh=1` 重建。
 
 ## 运行方式
 

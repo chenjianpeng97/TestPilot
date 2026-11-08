@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import os
-import threading
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +11,6 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from tuner_testkit.catalog.build import build_catalog
 from tuner_testkit.catalog.directory import build_directory
 from tuner_testkit.project import project_root
 from tuner_testkit.tools.runner import DestructiveNotConfirmed, RunRequest, run_tool
@@ -57,16 +55,6 @@ def create_app(*, root: Path | None = None) -> FastAPI:
 
     def directory(*, refresh: bool = False) -> dict[str, Any]:
         return build_directory(repo, include_kit_tools=True, refresh=refresh)
-
-    catalog_lock = threading.Lock()
-    catalog_cache: dict[str, Any] = {}
-
-    def catalog(*, refresh: bool = False) -> dict[str, Any]:
-        # Full catalog is slow (scan + git log per asset): build once per process, rebuild on ?refresh=1.
-        with catalog_lock:
-            if refresh or "payload" not in catalog_cache:
-                catalog_cache["payload"] = build_catalog(repo, include_kit_tools=True)
-            return catalog_cache["payload"]
 
     dashboard = DashboardStore(repo)
     app.state.dashboard = dashboard
@@ -196,24 +184,9 @@ def create_app(*, root: Path | None = None) -> FastAPI:
         intro = read_component_intro(repo, item.get("path") or "")
         return _render(request, "ai_detail.html", item=item, intro=intro)
 
-    @app.get("/knowledge", response_class=HTMLResponse)
-    def knowledge(request: Request, refresh: bool = False) -> HTMLResponse:
-        payload = catalog(refresh=refresh)
-        return _render(
-            request,
-            "knowledge.html",
-            assets=payload.get("knowledge", {}).get("assets", []),
-            inbox=payload.get("artifacts", {}).get("inbox", {}),
-            features=payload.get("tests", {}).get("features", []),
-        )
-
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         return {"ok": True, "root": str(repo)}
-
-    @app.get("/api/catalog")
-    def api_catalog(refresh: bool = Query(False)) -> JSONResponse:
-        return JSONResponse(catalog(refresh=refresh))
 
     @app.get("/api/directory")
     def api_directory(refresh: bool = Query(False)) -> JSONResponse:

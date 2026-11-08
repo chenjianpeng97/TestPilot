@@ -31,7 +31,7 @@
 ## 4. B 阶段任务
 
 - B0 工作台以 `tuner_testkit/workbench/tests` 验收。
-- B1 `tuner-workbench`：一条命令刷新 catalog、起服（127.0.0.1）、开浏览器；工具目录 / 表单 / 运行 / 日志 / 运行历史 / 知识浏览 / 环境切换。
+- B1 `tuner-workbench`：一条命令起服（127.0.0.1）、开浏览器；工具目录 / 表单 / 运行 / 日志 / 运行历史 / 环境切换。
 - B2 工具输出契约：`--json` envelope + run manifest。
 - B3 skill / rule：`create-app` 默认生成 `tool.py`；`create-action-word` 要求参数 `description`；「工作台可见」约束。
 - B4 轻量用户入口：scaffold 生成 `workbench.cmd` / `workbench.sh`；README「三步」。
