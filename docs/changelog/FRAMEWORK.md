@@ -46,7 +46,7 @@
 
 ## 2026-11-08 — tuner-testkit 7.4.0（去掉工作台「知识」页）
 
-- **commit**: TBD
+- **commit**: `e366baa`
 - **目的**: 工作台 `/knowledge` 每次都走 `build_catalog`（全仓扫描再对每个资产 `git log`），大仓打开极慢，页面只列路径和标题，实际用处不大。删除该页、`/api/catalog`，以及启动时后台写 `workspace.json` 的线程。知识仍在仓库 `knowledge/` 里用编辑器或 `maintain-wiki` 维护。
 - **路径**:
   - `tuner_testkit/workbench/{app.py,cli.py,templates/base.html,templates/knowledge.html,tests/test_app.py,README.md}`
