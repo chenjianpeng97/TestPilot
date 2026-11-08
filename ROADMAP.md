@@ -50,13 +50,13 @@
 | 主题 | 7.0 落地 | 后续 |
 | --- | --- | --- |
 | 知识与资产分离 | 顶层 `knowledge/`（ddl / raw / wiki / requirements / defects）；`assets/` 只留测试资产；`migrate knowledge` | wiki lint 的自动化程度、需求覆盖率进报告 |
-| 可用性 | `health-check`（`tuner-workspace doctor`）、`upgrade-framework`（`.tuner-dna.json` + `--prune`）、`maintain-config` | doctor 进 CI 的 strict 门槛 |
+| 可用性 | `health-check`（`tuner-workspace doctor`）、`upgrade-framework`（`.tuner-dna.json` + `--prune`）、`maintain-config`、`refresh-dashboard`（`tuner-dashboard` 离线统计，工作台看板只读结果） | doctor 进 CI 的 strict 门槛 |
 | 配置 | `OPS / PORTS / CHANNELS / KNOWLEDGE`；`show --json`、`validate` | 环境间差异对比 |
 | 端口与自定义 apps | `log-source`；`@tool(port=)` | 只在取数方式各团队不同时加端口（如 Rancher 操作） |
 | 缺陷库 | 像用例一样：`knowledge/defects/<DEF-ID>.md` 固定模板、`tuner_testkit.defects` 校验、`maintain-defectlib` | 缺陷趋势进报告 |
 | 浏览器通道 | `CHANNELS.browser`：Playwright MCP / Cursor 浏览器 | Cursor 浏览器的网络证据补全 |
 | 追溯 | 对象级 changelog + version bump，pre-commit 校验；inbox 只给 agents | changelog 进工作台 |
-| 收敛 | 对外 13 个入口 skill（知识 3 / 动作 6 / 可用性 4），其余 `internal` | 按使用数据继续合并 |
+| 收敛 | 对外 14 个入口 skill（知识 3 / 动作 6 / 可用性 5），其余 `internal` | 按使用数据继续合并 |
 | DNA 两份视图 | 平台专属路径与 `platform-only` 块不下发 | — |
 
 ## 6. 版本节奏

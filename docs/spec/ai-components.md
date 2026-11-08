@@ -46,6 +46,7 @@ skill 在 front-matter 用 `group` 分组。**对外入口**只有三组 13 个�
 | `maintain-config` | 用 LLM 读写 `config/`：环境、URL、数据库、OPS 通道、端口绑定、浏览器通道 |
 | `upgrade-framework` | 升级 `tuner-testkit` 和 DNA（规则、skill、规范），处理本地覆盖 |
 | `create-app` | 在 `apps/` 新建独立工具，含端口适配器模板（如后端日志） |
+| `refresh-dashboard` | 手动刷新工作台看板：`tuner-dashboard refresh` 离线统计资产、自动化、工具、自检与环境概览，写入库的 `DASHBOARD.md` 与本机 `artifacts/catalogs/dashboard.json`，工作台只读结果 |
 
 ### 2.4 内部 skill（`internal`）：由入口调用
 

@@ -9,18 +9,33 @@
 <body>
   <header class="bar">
     <a class="brand" href="/">tuner workbench</a>
-    <nav>
-      <a href="/tools">工具</a>
-      <a href="/words/db_seed">造数</a>
-      <a href="/runs">运行历史</a>
-      <a href="/ai">AI 组件</a>
-      <a href="/knowledge">知识</a>
-      <a href="/env">环境</a>
-    </nav>
     <span class="muted">{{ root }}</span>
   </header>
-  <main>
-    {% block body %}{% endblock %}
-  </main>
+  {% set path = request.url.path %}
+  {% set nav_ops = [
+    ("/words/db_seed", "造数"),
+    ("/tools", "工具目录"),
+    ("/runs", "运行历史"),
+    ("/ai", "AI 组件"),
+    ("/knowledge", "知识"),
+    ("/env", "环境"),
+  ] %}
+  <div class="layout">
+    <aside class="side">
+      <h4>看板</h4>
+      <a href="/" class="{{ 'on' if path == '/' else '' }}"><span class="num">1</span>概览</a>
+      {% for pid, title, _ in dash_pages %}
+      {% set href = '/dashboard/' ~ pid %}
+      <a href="{{ href }}" class="{{ 'on' if path == href else '' }}"><span class="num">{{ loop.index + 1 }}</span>{{ title }}</a>
+      {% endfor %}
+      <h4>操作</h4>
+      {% for href, title in nav_ops %}
+      <a href="{{ href }}" class="{{ 'on' if path.startswith(href) else '' }}"><span class="num">{{ loop.index + 1 + dash_pages|length }}</span>{{ title }}</a>
+      {% endfor %}
+    </aside>
+    <main>
+      {% block body %}{% endblock %}
+    </main>
+  </div>
 </body>
 </html>

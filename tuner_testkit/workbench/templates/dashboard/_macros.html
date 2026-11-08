@@ -1,0 +1,32 @@
+{% macro stamp(dash) -%}
+<p class="stamp">
+  {% if dash.stamp %}统计于 {{ dash.stamp }}{% if dash.age %}（{{ dash.age }}）{% endif %}{% else %}尚无统计时间{% endif %}
+  {% if dash.source == "markdown" %} · 计数来自入库的 <code>DASHBOARD.md</code>{% endif %}
+  · 刷新：让 AI 执行 <code>refresh-dashboard</code>，或运行 <code>uv run tuner-dashboard refresh</code>
+</p>
+{% if dash.hint %}<p class="hint">{{ dash.hint }}</p>{% endif %}
+{% for name, err in dash.errors.items() %}<p class="hint">「{{ name }}」段统计失败，计数沿用上次：{{ err }}</p>{% endfor %}
+{%- endmacro %}
+
+{% macro num(value) -%}{{ value if value is not none else "—" }}{%- endmacro %}
+
+{% macro hbars(rows) -%}
+{% if rows %}
+{% set mx = rows|map(attribute='count')|max %}
+<table class="dist">
+  {% for row in rows %}
+  <tr>
+    <td>{{ row.name }}</td>
+    <td class="hbar"><i style="width: {{ ((row.count / mx) * 100 if mx else 0)|round(1) }}%"></i></td>
+    <td class="n">{{ row.count }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">暂无</p>{% endif %}
+{%- endmacro %}
+
+{% macro badge(status) -%}<span class="badge st-{{ status }}">{{ status }}</span>{%- endmacro %}
+
+{% macro needs_json(dash) -%}
+{% if dash.source != "json" %}<p class="muted">这一页的明细只在本机统计结果里（<code>artifacts/catalogs/dashboard.json</code>）。</p>{% endif %}
+{%- endmacro %}

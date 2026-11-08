@@ -1,8 +1,9 @@
-<!-- version: 0.2.0 -->
+<!-- version: 0.2.1 -->
 # INDEX.project — TestPilot 业务资产地图
 
 > 本仓被测系统（SUT）的知识与资产地图。生成任何测试、资产、工具前先读这里。
 > AI 组件见 `.cursor/REGISTRY.md`；kit 自带工具用 `tuner-workspace catalog --out -` 列出。
+> 各类资产与工具的数量见根目录 `DASHBOARD.md`（skill `refresh-dashboard` 运行 `tuner-dashboard refresh` 生成，不要手改）。
 > 标有 `auto:` 围栏的区块由 `tuner-workspace index render` 从 `artifacts/catalogs/workspace.json`
 > 确定性渲染，不要手改；人工区由 `maintain-index` skill 增量维护。
 

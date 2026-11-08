@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "dashboard/_macros.html" import stamp, num %}
+{% block title %}看板 · tuner workbench{% endblock %}
+{% block body %}
+{% set c = dash.counts or {} %}
+{% set s = dash.sections or {} %}
+<h1>工作台看板</h1>
+{{ stamp(dash) }}
+<section class="groups">
+  <a class="group" href="/dashboard/assets">
+    <h3>测试资产</h3>
+    <div class="stats">
+      <div class="stat"><strong>{{ num(c.testcases) }}</strong><span>测试用例</span></div>
+      <div class="stat"><strong>{{ num(c.testsheets_active) }}</strong><span>进行中测试单</span></div>
+      <div class="stat"><strong>{{ num(c.testsheets_archived) }}</strong><span>已归档测试单</span></div>
+      <div class="stat"><strong>{{ num(c.defects) }}</strong><span>缺陷</span></div>
+    </div>
+  </a>
+  <a class="group" href="/dashboard/automation">
+    <h3>自动化覆盖</h3>
+    <div class="stats">
+      <div class="stat"><strong>{{ num(c.api_objects) }}</strong><span>API 对象</span></div>
+      <div class="stat"><strong>{{ num(c.page_objects) }}</strong><span>UI 页面对象</span></div>
+      <div class="stat"><strong>{{ num(c.db_seeds) }}</strong><span>db_seed</span></div>
+      <div class="stat"><strong>{{ num(c.pytest_tests) }}</strong><span>pytest 用例</span></div>
+      <div class="stat"><strong>{{ num(c.bdd_scenarios) }}</strong><span>BDD 场景</span></div>
+    </div>
+  </a>
+  <a class="group" href="/dashboard/tools">
+    <h3>工具</h3>
+    <div class="stats">
+      <div class="stat"><strong>{{ num(c.kit_commands) }}</strong><span>工作台通用命令</span></div>
+      <div class="stat"><strong>{{ num(c.workspace_tools) }}</strong><span>项目自建工具</span></div>
+      <div class="stat"><strong>{{ num(c.workspace_apps_without_tool) }}</strong><span>无 tool.py 的 app</span></div>
+    </div>
+  </a>
+  <a class="group" href="/dashboard/doctor">
+    <h3>工作台自检</h3>
+    {% set d = s.doctor or {} %}
+    {% if d and not d.error %}
+    {% set caps = d.capabilities or [] %}
+    <div class="stats">
+      <div class="stat"><strong class="{{ '' if d.ok else 'warn' }}">{{ "通过" if d.ok else "有缺口" }}</strong><span>基础项</span></div>
+      <div class="stat"><strong>{{ d.summary_core.warn + d.summary_core.missing + d.summary_core.error }}</strong><span>基础项待处理</span></div>
+      <div class="stat"><strong>{{ caps|selectattr('ready')|list|length }}/{{ caps|length }}</strong><span>功能就绪</span></div>
+    </div>
+    {% else %}<p class="muted">{{ d.error or "暂无自检结果" }}</p>{% endif %}
+  </a>
+  <a class="group" href="/dashboard/config">
+    <h3>被测系统配置</h3>
+    {% set cfg = s.config or {} %}
+    {% if cfg and not cfg.error %}
+    <div class="stats">
+      <div class="stat"><strong>{{ cfg.environments|length }}</strong><span>环境</span></div>
+      <div class="stat"><strong>{{ cfg.active or "—" }}</strong><span>当前环境</span></div>
+      <div class="stat"><strong>{{ cfg.knowledge.source_roots }}</strong><span>源码位置</span></div>
+    </div>
+    {% else %}<p class="muted">{{ cfg.error or "暂无配置概览" }}</p>{% endif %}
+  </a>
+</section>
+<p class="muted">快捷入口：<a href="/words/db_seed">造数</a> · <a href="/tools">工具目录</a> · <a href="/runs">运行历史</a></p>
+{% endblock %}

@@ -262,6 +262,63 @@ def describe_project_config() -> dict[str, Any]:
     return payload
 
 
+_DB_FIELDS: tuple[str, ...] = ("type", "host", "port")
+
+
+def describe_environments(local: Any = _UNSET) -> dict[str, Any]:
+    """Per-environment overview of ``env_local.ENVIRONMENTS`` built from a whitelist.
+
+    Only URLs and ``DATABASES`` type / host / port / database name are copied;
+    every other section is reduced to its entry count, so credentials and
+    accounts are never read into the result. Section names are kept only when
+    they look like config sections (upper case) and do not name a secret.
+    """
+    from tuner_testkit.config_schema import SECRET_KEY_RE
+
+    if local is _UNSET:
+        local = load_env_local()
+    envs = environments_of(local) if local is not None else None
+    if not envs:
+        return {"mode": "none" if local is None else "flat", "active": None, "environments": []}
+    try:
+        active: str | None = resolve_active_name(
+            available=list(envs),
+            module_default=str(getattr(local, "ACTIVE_ENV", None) or "") or None,
+            active_file_text=read_active_env_file(),
+        )
+    except EnvProfileError:
+        active = None
+    rows: list[dict[str, Any]] = []
+    for name, profile in envs.items():
+        profile = profile if isinstance(profile, dict) else {}
+        databases = []
+        for alias, cfg in (profile.get("DATABASES") or {}).items():
+            if not isinstance(cfg, dict):
+                continue
+            row = {"alias": str(alias), **{k: cfg[k] for k in _DB_FIELDS if cfg.get(k) not in (None, "")}}
+            db_name = cfg.get("name") or cfg.get("database")
+            if db_name:
+                row["name"] = db_name
+            databases.append(row)
+        sections = {
+            str(key): len(value) if isinstance(value, (dict, list, tuple)) else 1
+            for key, value in profile.items()
+            if str(key).isupper()
+            and not SECRET_KEY_RE.search(str(key))
+            and key not in {"TEST_BASE_URL", "TEST_UI_BASE_URL", "DATABASES"}
+        }
+        rows.append(
+            {
+                "name": str(name),
+                "api_base_url": str(profile.get("TEST_BASE_URL") or ""),
+                "ui_base_url": str(profile.get("TEST_UI_BASE_URL") or ""),
+                "databases": databases,
+                "sections": sections,
+            }
+        )
+    return {"mode": "environments", "active": active, "environments": rows}
+
+
 def _cmd_show(args: argparse.Namespace) -> int:
     if getattr(args, "json", False):
         import json

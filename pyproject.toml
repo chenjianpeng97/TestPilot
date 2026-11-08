@@ -83,6 +83,7 @@ tuner-action-words = "tuner_testkit.action_words.__main__:main"
 tuner-evidence = "tuner_testkit.apps.evidence.cli:main"
 tuner-task = "tuner_testkit.apps.task.cli:main"
 tuner-testreport = "tuner_testkit.apps.testreport.cli:main"
+tuner-dashboard = "tuner_testkit.apps.dashboard.cli:main"
 tuner-openapi-import = "tuner_testkit.apps.openapi_import.cli:main"
 tuner-workbench = "tuner_testkit.workbench.cli:main"
 

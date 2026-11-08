@@ -43,7 +43,7 @@
 - **对外 skill 按三组**（front-matter `group`；其余为 `internal`，由入口 skill 或 agent 调用）：
   - 知识：`maintain-wiki`、`dump-ddl`、`maintain-defectlib`
   - 动作：`maintain-testcases`、`maintain-testsheet`、`execute-testsheet`、`generate-test-report`、`maintain-bdd-assets`、`maintain-pytest`
-  - 可用性：`health-check`、`upgrade-framework`、`maintain-config`、`create-app`
+  - 可用性：`health-check`、`upgrade-framework`、`maintain-config`、`create-app`、`refresh-dashboard`
 
 ## 4. 扩展原则：端口与自定义 apps
 

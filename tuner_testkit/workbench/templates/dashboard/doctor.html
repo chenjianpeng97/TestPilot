@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "dashboard/_macros.html" import stamp, badge, needs_json %}
+{% block title %}工作台自检 · tuner workbench{% endblock %}
+{% block body %}
+<h1>工作台自检</h1>
+{{ stamp(dash) }}
+{{ needs_json(dash) }}
+{% if section.error %}<p class="warn">{{ section.error }}</p>{% endif %}
+{% if section and not section.error %}
+<p>基础项：{% if section.ok %}<span class="badge st-ok">通过</span>{% else %}<span class="badge st-missing">有缺口</span>{% endif %}
+  {% for st, n in section.summary_core.items() if n %} {{ badge(st) }} {{ n }}{% endfor %}
+  <span class="muted">· 修复缺口：让 AI 执行 <code>health-check</code>（本页只读，数据库连通性不在这里测）</span></p>
+<h2>功能就绪度</h2>
+<table>
+  <tr><th>功能</th><th>依赖它的 skill / agent</th><th>就绪</th><th>缺什么</th></tr>
+  {% for cap in section.capabilities %}
+  <tr>
+    <td>{{ cap.title }} <span class="muted">{{ cap.id }}</span></td>
+    <td>{{ cap.used_by }}</td>
+    <td>{% if cap.ready %}<span class="badge st-ok">就绪</span>{% else %}<span class="badge st-warn">未就绪</span>{% endif %}</td>
+    <td>{% for b in cap.blockers %}<div><code>{{ b.id }}</code> {{ b.detail }}</div>{% endfor %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% for tier, title in [("core", "基础项"), ("feature", "功能项")] %}
+<h2>{{ title }}</h2>
+<table>
+  <tr><th>检查</th><th>状态</th><th>说明</th><th>下一步</th></tr>
+  {% for ck in section.checks if ck.tier == tier %}
+  <tr><td><code>{{ ck.id }}</code></td><td>{{ badge(ck.status) }}</td><td>{{ ck.detail }}</td><td>{{ ck.fix or "" }}</td></tr>
+  {% endfor %}
+</table>
+{% endfor %}
+{% endif %}
+{% endblock %}

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,6 @@ from fastapi.templating import Jinja2Templates
 
 from tuner_testkit.catalog.build import build_catalog
 from tuner_testkit.catalog.directory import build_directory
-from tuner_testkit.catalog.scan import read_git_meta
 from tuner_testkit.project import project_root
 from tuner_testkit.tools.runner import DestructiveNotConfirmed, RunRequest, run_tool
 from tuner_testkit.apps.index_ai.registry import (
@@ -22,7 +22,8 @@ from tuner_testkit.apps.index_ai.registry import (
     find_component,
     read_component_intro,
 )
-from tuner_testkit.workbench.kinds import home_cards, known_word_kind
+from tuner_testkit.workbench.dashboard import PAGES, DashboardStore
+from tuner_testkit.workbench.kinds import known_word_kind
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 
@@ -40,23 +41,43 @@ def create_app(*, root: Path | None = None) -> FastAPI:
     def directory(*, refresh: bool = False) -> dict[str, Any]:
         return build_directory(repo, include_kit_tools=True, refresh=refresh)
 
-    def catalog() -> dict[str, Any]:
-        return build_catalog(repo, include_kit_tools=True)
+    catalog_lock = threading.Lock()
+    catalog_cache: dict[str, Any] = {}
+
+    def catalog(*, refresh: bool = False) -> dict[str, Any]:
+        # Full catalog is slow (scan + git log per asset): build once per process, rebuild on ?refresh=1.
+        with catalog_lock:
+            if refresh or "payload" not in catalog_cache:
+                catalog_cache["payload"] = build_catalog(repo, include_kit_tools=True)
+            return catalog_cache["payload"]
+
+    dashboard = DashboardStore(repo)
+    app.state.dashboard = dashboard
 
     def _render(request: Request, name: str, **ctx: Any) -> HTMLResponse:
-        return templates.TemplateResponse(request, name, {"root": str(repo), **ctx})
+        return templates.TemplateResponse(request, name, {"root": str(repo), "dash_pages": PAGES, **ctx})
 
     @app.get("/", response_class=HTMLResponse)
-    def home(request: Request, refresh: bool = False) -> HTMLResponse:
-        payload = directory(refresh=refresh)
-        ai = collect_catalog(repo)
+    def home(request: Request) -> HTMLResponse:
+        return _render(request, "dashboard/home.html", dash=dashboard.view())
+
+    @app.get("/dashboard/{page}", response_class=HTMLResponse)
+    def dashboard_page(request: Request, page: str) -> HTMLResponse:
+        meta = next((p for p in PAGES if p[0] == page), None)
+        if meta is None:
+            raise HTTPException(404, f"unknown dashboard page {page}")
+        dash = dashboard.view()
         return _render(
             request,
-            "home.html",
-            cards=home_cards(payload.get("counts_by_kind") or {}),
-            ai_total=ai.get("total") or 0,
-            git=read_git_meta(repo),
+            f"dashboard/{page}.html",
+            dash=dash,
+            page=meta,
+            section=(dash.get("sections") or {}).get(page) or {},
         )
+
+    @app.get("/api/dashboard")
+    def api_dashboard() -> JSONResponse:
+        return JSONResponse(dashboard.load())
 
     @app.get("/tools", response_class=HTMLResponse)
     def tools_page(request: Request, q: str = "", refresh: bool = False) -> HTMLResponse:
@@ -157,8 +178,8 @@ def create_app(*, root: Path | None = None) -> FastAPI:
         return _render(request, "ai_detail.html", item=item, intro=intro)
 
     @app.get("/knowledge", response_class=HTMLResponse)
-    def knowledge(request: Request) -> HTMLResponse:
-        payload = catalog()
+    def knowledge(request: Request, refresh: bool = False) -> HTMLResponse:
+        payload = catalog(refresh=refresh)
         return _render(
             request,
             "knowledge.html",
@@ -172,8 +193,8 @@ def create_app(*, root: Path | None = None) -> FastAPI:
         return {"ok": True, "root": str(repo)}
 
     @app.get("/api/catalog")
-    def api_catalog() -> JSONResponse:
-        return JSONResponse(catalog())
+    def api_catalog(refresh: bool = Query(False)) -> JSONResponse:
+        return JSONResponse(catalog(refresh=refresh))
 
     @app.get("/api/directory")
     def api_directory(refresh: bool = Query(False)) -> JSONResponse:

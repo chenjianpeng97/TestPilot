@@ -99,7 +99,7 @@ def _path_to_layer(path: str) -> str | None:
         return "agents"
     if p.startswith(".cursor/hooks") or p.startswith("tools/git-hooks/"):
         return "hooks"
-    if p in {"INDEX.md", "INDEX.project.md", ".cursor/REGISTRY.md"}:
+    if p in {"INDEX.md", "INDEX.project.md", ".cursor/REGISTRY.md", "DASHBOARD.md"}:
         return "index"
     # root config / meta files carry no required layer scope
     return None

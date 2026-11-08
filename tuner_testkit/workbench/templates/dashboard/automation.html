@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "dashboard/_macros.html" import stamp, num, hbars, needs_json %}
+{% block title %}自动化覆盖 · tuner workbench{% endblock %}
+{% block body %}
+{% set c = dash.counts or {} %}
+<h1>自动化覆盖</h1>
+{{ stamp(dash) }}
+<section class="stats">
+  <div class="stat"><strong>{{ num(c.api_objects) }}</strong><span>API 对象</span></div>
+  <div class="stat"><strong>{{ num(c.page_objects) }}</strong><span>UI 页面对象</span></div>
+  <div class="stat"><strong>{{ num(c.action_words) }}</strong><span>动作词</span></div>
+  <div class="stat"><strong>{{ num(c.db_seeds) }}</strong><span>db_seed</span></div>
+  <div class="stat"><strong>{{ num(c.bdd_features) }} / {{ num(c.bdd_scenarios) }}</strong><span>BDD feature / 场景</span></div>
+  <div class="stat"><strong>{{ num(c.pytest_files) }} / {{ num(c.pytest_tests) }}</strong><span>pytest 文件 / 用例</span></div>
+</section>
+{{ needs_json(dash) }}
+{% if section and not section.error %}
+<div class="cols">
+  <div>
+    <h2>API 对象按分组</h2>
+    {{ hbars(section.api_objects.by_group) }}
+  </div>
+  <div>
+    <h2>API 对象按方法</h2>
+    {{ hbars(section.api_objects.by_method) }}
+    <h2>动作词按类别</h2>
+    <table class="dist">
+      {% for cat, n in section.action_words.by_category.items() %}
+      <tr><td><a href="/words/{{ cat }}">{{ cat }}</a></td><td class="n">{{ n }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+<h2>db_seed</h2>
+{% set seeds = section.action_words['items']|selectattr('category', 'equalto', 'db_seed')|list %}
+{% if seeds %}
+<table>
+  <tr><th>word_id</th><th>名称</th><th>文件</th></tr>
+  {% for w in seeds %}
+  <tr><td><a href="/words/db_seed/{{ w.id }}"><code>{{ w.id }}</code></a></td><td>{{ w.name }}</td><td><code>{{ w.path }}</code></td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">暂无</p>{% endif %}
+<h2>UI 页面对象</h2>
+{% if section.page_objects['items'] %}
+<table>
+  <tr><th>page_id</th><th>app</th><th>文件</th></tr>
+  {% for p in section.page_objects['items'] %}
+  <tr><td><code>{{ p.page_id }}</code></td><td>{{ p.app or "—" }}</td><td><code>{{ p.path }}</code></td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">暂无</p>{% endif %}
+<h2>BDD feature</h2>
+{% if section.bdd['items'] %}
+<table>
+  <tr><th>feature</th><th>场景</th><th>标签</th><th>文件</th></tr>
+  {% for f in section.bdd['items'] %}
+  <tr><td>{{ f.name }}</td><td>{{ f.scenarios }}</td><td>{{ f.tags|join(" ") }}</td><td><code>{{ f.path }}</code></td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">暂无</p>{% endif %}
+<h2>pytest</h2>
+{% if section.pytest['items'] %}
+<table>
+  <tr><th>文件</th><th>用例</th></tr>
+  {% for p in section.pytest['items'] %}
+  <tr><td><code>{{ p.path }}</code></td><td>{{ p.tests }}</td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">暂无</p>{% endif %}
+{% if section.truncated %}<p class="warn">扫描到上限被截断：{{ section.truncated|join("、") }}</p>{% endif %}
+{% endif %}
+{% endblock %}

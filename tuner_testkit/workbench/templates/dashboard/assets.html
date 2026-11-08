@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "dashboard/_macros.html" import stamp, num, hbars, needs_json %}
+{% block title %}测试资产 · tuner workbench{% endblock %}
+{% block body %}
+{% set c = dash.counts or {} %}
+<h1>测试资产</h1>
+{{ stamp(dash) }}
+<section class="stats">
+  <div class="stat"><strong>{{ num(c.testcases) }}</strong><span>测试用例</span></div>
+  <div class="stat"><strong>{{ num(c.testsheets_active) }}</strong><span>进行中测试单</span></div>
+  <div class="stat"><strong>{{ num(c.testsheets_archived) }}</strong><span>已归档测试单</span></div>
+  <div class="stat"><strong>{{ num(c.requirements) }}</strong><span>需求</span></div>
+  <div class="stat"><strong>{{ num(c.defects) }}</strong><span>缺陷</span></div>
+</section>
+{{ needs_json(dash) }}
+{% if section and not section.error %}
+<h2>进行中测试单</h2>
+{% if section.testsheets.active %}
+<table>
+  <tr><th>轮次</th><th>用例</th><th>进度</th><th>通过</th><th>失败</th><th>阻塞</th><th>忽略</th><th>待执行</th><th>缺陷（未关）</th><th>检查问题</th></tr>
+  {% for r in section.testsheets.active %}
+  <tr>
+    <td><code>{{ r.round }}</code></td>
+    {% if r.error %}
+    <td colspan="9" class="warn">{{ r.error }}</td>
+    {% else %}
+    <td>{{ r.total }}</td>
+    <td>
+      {% set t = r.total or 1 %}
+      <div class="track">
+        <span class="seg-pass" style="width: {{ (r.passed / t * 100)|round(1) }}%"></span>
+        <span class="seg-fail" style="width: {{ (r.failed / t * 100)|round(1) }}%"></span>
+        <span class="seg-block" style="width: {{ (r.blocked / t * 100)|round(1) }}%"></span>
+        <span class="seg-ignore" style="width: {{ (r.ignored / t * 100)|round(1) }}%"></span>
+      </div>
+    </td>
+    <td>{{ r.passed }}</td><td>{{ r.failed }}</td><td>{{ r.blocked }}</td><td>{{ r.ignored }}</td><td>{{ r.pending }}</td>
+    <td>{{ r.defects }}（{{ r.defects_open }}）</td>
+    <td class="{{ 'warn' if r.issues else '' }}">{{ r.issues }}</td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+<p class="muted">进度条：绿 通过 · 红 失败 · 黄 阻塞 · 灰 忽略；空白为待执行。检查问题是 <code>tuner-testreport stats --check</code> 的 error 数。</p>
+{% else %}<p class="muted">没有进行中的测试单。</p>{% endif %}
+{% if section.testsheets.archived %}
+<p class="muted">已归档：{{ section.testsheets.archived|join("、") }}</p>
+{% endif %}
+<div class="cols">
+  <div>
+    <h2>用例按模块</h2>
+    {{ hbars(section.testcases.by_module) }}
+  </div>
+  <div>
+    <h2>用例按状态</h2>
+    {{ hbars(section.testcases.by_status) }}
+    <h2>缺陷按状态</h2>
+    {{ hbars(section.defects.by_status) }}
+  </div>
+</div>
+{% if section.truncated %}<p class="warn">扫描到上限被截断：{{ section.truncated|join("、") }}</p>{% endif %}
+{% endif %}
+{% endblock %}

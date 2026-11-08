@@ -6,7 +6,7 @@
 > 确定性生成，供人类工程师一眼看全当前能力与版本。稳定世界观见 `AGENTS.md`；
 > 业务资产地图见 `INDEX.project.md`。
 
-> 组件总数：**56**（rules 19 · skills 30，其中对外入口 13 · agents 3 · hooks 4）
+> 组件总数：**57**（rules 19 · skills 31，其中对外入口 14 · agents 3 · hooks 4）
 
 ## 对外入口（按三组）
 
@@ -14,7 +14,7 @@
 
 - **知识**（`knowledge`）：`dump-ddl`、`maintain-defectlib`、`maintain-wiki`
 - **动作**（`action`）：`execute-testsheet`、`generate-test-report`、`maintain-bdd-assets`、`maintain-pytest`、`maintain-testcases`、`maintain-testsheet`
-- **可用性**（`availability`）：`create-app`、`health-check`、`maintain-config`、`upgrade-framework`
+- **可用性**（`availability`）：`create-app`、`health-check`、`maintain-config`、`refresh-dashboard`、`upgrade-framework`
 
 ## Rules（约束/边界）
 
@@ -56,6 +56,7 @@
 | `create-app` | availability | 1.3.1 | Scaffolds a new standalone workspace tool under apps/ that reuses tuner_testkit plus this repo's packages business asse… | `.cursor/skills/create-app/SKILL.md` |
 | `health-check` | availability | 3.0.0 | Checks which basics and which capability prerequisites this TestPilot workspace still lacks - UI and API URLs, database… | `.cursor/skills/health-check/SKILL.md` |
 | `maintain-config` | availability | 1.0.0 | Reads and edits the workspace config (SUT environments and URLs, databases, test account, OPS channels such as Rancher … | `.cursor/skills/maintain-config/SKILL.md` |
+| `refresh-dashboard` | availability | 1.0.0 | Refreshes the workbench dashboard numbers offline - testcases, testsheets, defects, API / page objects, action words an… | `.cursor/skills/refresh-dashboard/SKILL.md` |
 | `upgrade-framework` | availability | 1.0.0 | Upgrades this TestPilot workspace to a newer tuner-testkit release - tool domain and project .venv, DNA (rules, skills,… | `.cursor/skills/upgrade-framework/SKILL.md` |
 | `analyze-mcp-network` | internal | 1.0.0 | Internal step (usually reached via sut-self-learning / freeze-api-objects) | `.cursor/skills/analyze-mcp-network/SKILL.md` |
 | `create-action-word` | internal | 1.2.0 | Creates or updates action words under packages/action_words/ following action-words-syntax.md | `.cursor/skills/create-action-word/SKILL.md` |

@@ -109,7 +109,8 @@ console_scripts：`tuner-config`、`tuner-recorder`、`tuner-dna`、`tuner-init`
 | `index_ai` | `tuner-index-ai` | 生成 `.cursor/REGISTRY.md` | `tuner_testkit/apps/index_ai/README.md` |
 | `init_repo` | `tuner-init scaffold <dir> [--name <project>]` | 任意目录铺新仓骨架 + 一次 `dna sync`。项目名默认取文件夹名（可用 `--name` 覆盖）。wheel 带 `stubs/`；**不再拷**运行库源码 | `tuner_testkit/apps/init_repo/README.md` |
 | `workspace` | `tuner-workspace catalog` / `index render\|check` / `run` / `meta stamp` / `doctor` / `changelog append\|check` / `migrate knowledge` | 确定性 workspace catalog、INDEX 自动区渲染、按清单运行工具、front-matter 署名、体检、对象级 changelog、布局迁移 | `tuner_testkit/workspace/README.md` |
-| `workbench` | `tuner-workbench` | 本机 127.0.0.1 工作台：目录切片（`@tool` / kit `@register`，含 `db_seed/<域>/*.py`）/ `db_seed` 特化页 / 表单运行 / 运行历史 / AI 组件 / 知识浏览（`[workbench]` extra） | `tuner_testkit/workbench/README.md` |
+| `workbench` | `tuner-workbench` | 本机 127.0.0.1 工作台：首页只读看板（读 `tuner-dashboard` 结果）/ 目录切片（`@tool` / kit `@register`，含 `db_seed/<域>/*.py`）/ `db_seed` 特化页 / 表单运行 / 运行历史 / AI 组件 / 知识浏览（`[workbench]` extra） | `tuner_testkit/workbench/README.md` |
+| `dashboard` | `tuner-dashboard refresh [--no-doctor] [--out-dir]` / `status` | 离线统计看板数字：用例、测试单、缺陷、API / 页面对象、动作词、BDD、pytest、工具、doctor、环境概览；写入库的 `DASHBOARD.md`（计数变了才重写）与本机 `artifacts/catalogs/dashboard.json` | `tuner_testkit/apps/dashboard/README.md`；skill `refresh-dashboard` |
 | `tools`（库） | `from tuner_testkit.tools import tool` | `apps/<name>/tool.py` 的 `@tool` 清单：argparse → `params_schema` + `argv_plan`，供 catalog / 工作台 / 运行器 | `docs/spec/apps-authoring-syntax.md` §5 |
 | `mock_server` | `tuner-mock-server serve` | 按 `data/mocks` 回放（需 `[mock]`） | `tuner_testkit/apps/mock_server/README.md` |
 | `evidence` | `tuner-evidence persist` / `attach` / `routes` | MCP/网络 dump 脱敏落盘 `artifacts/evidence/<run_id>/`，并可挂上截图、脱敏日志、接口 JSON 与 `task_id` | `tuner_testkit/apps/evidence/README.md` |

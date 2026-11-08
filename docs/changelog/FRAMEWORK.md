@@ -44,6 +44,21 @@
 
 ---
 
+## 2026-11-08 — 工作台看板（tuner-dashboard 离线统计 + refresh-dashboard skill，未发版）
+
+- **commit**: `TBD`
+- **目的**: 工作台首页改成只读看板（测试资产、自动化覆盖、工具、工作台自检、被测系统配置），并解决早期看板在请求里汇总文件系统导致的卡顿：统计挪到离线 app `tuner-dashboard`，由新 skill `refresh-dashboard` 手动触发；工作台只读结果文件，按 mtime 缓存。
+- **路径**:
+  - `tuner_testkit/apps/dashboard/**`（新 app；`pyproject.toml` 注册 `tuner-dashboard`）
+  - `tuner_testkit/config.py`（`describe_environments()`：按白名单输出逐环境的地址与数据源类型 / host / 端口 / 库名）
+  - `tuner_testkit/workbench/**`（看板首页与 5 个子页、左侧编号导航、`/api/dashboard`；启动时 catalog 改后台线程；`/knowledge` 懒加载缓存，`?refresh=1` 重建）
+  - `.cursor/skills/refresh-dashboard/SKILL.md`（可用性组，入口 skill 13 → 14）、`AGENTS.md` §3、`docs/spec/ai-components.md` §2.3、`.cursor/REGISTRY.md`、`ROADMAP.md`
+  - `tools/git-hooks/validate_commit_msg.py`、`docs/spec/commit-convention.md`（`DASHBOARD.md` 归 `index` scope）
+  - `tuner_testkit/apps/init_repo/stubs/INDEX.project.md`（0.2.0 → 0.2.1，登记 `DASHBOARD.md`）
+  - `INDEX.md` §3
+- **不在同步范围**: 下游无需迁移；升级后执行一次 `refresh-dashboard` 生成 `DASHBOARD.md`
+- **验证**: pytest `tuner_testkit` 188 通过（新增 app 9 条、工作台 5 条）；`uvx ruff@0.17.3 check .`；jnj 只读实测（`--out-dir` 写临时目录）：refresh 共 0.73 s（assets 0.28 s、automation 0.14 s、tools 0.01 s、doctor 0.30 s），看板首页首次 93 ms、之后 8 ms，子页 12–19 ms
+
 ## 2026-11-06 — tuner-testkit 7.2.0（任务文件夹与附件、任务与测试单归档）
 
 - **目的**: 任务从单文件改为文件夹（`task.md` 加 `attachments/`）；新增任务与测试单的 `archived/` 归档，归档由用户决定，LLM 先 `--check` 提示再协助执行。

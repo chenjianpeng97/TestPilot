@@ -1,8 +1,9 @@
-"""CLI: ``tuner-workbench`` — refresh catalog, serve 127.0.0.1, open browser."""
+"""CLI: ``tuner-workbench`` — serve 127.0.0.1, open browser; catalog refresh runs in the background."""
 from __future__ import annotations
 
 import argparse
 import sys
+import threading
 import webbrowser
 from pathlib import Path
 
@@ -20,17 +21,27 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _write_catalog(root: Path) -> None:
+    """Refresh ``artifacts/catalogs/workspace.json`` off the request path (it runs git log per asset)."""
+    from tuner_testkit.catalog.build import build_catalog, write_catalog
+    from tuner_testkit.logging import log_warn
+
+    try:
+        write_catalog(build_catalog(root), root / "artifacts" / "catalogs" / "workspace.json")
+    except Exception as exc:  # noqa: BLE001 -- the server must keep running without the catalog file
+        log_warn("workbench_catalog_failed", error=f"{type(exc).__name__}: {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     ns = build_parser().parse_args(argv)
     if ns.host not in {"127.0.0.1", "localhost", "::1"}:
         sys.stderr.write("tuner-workbench refuses to bind outside the loopback interface.\n")
         return 2
-    from tuner_testkit.catalog.build import write_catalog, build_catalog
     from tuner_testkit.project import project_root
     from tuner_testkit.workbench.app import create_app
 
     root = Path(ns.root).resolve() if ns.root else project_root()
-    write_catalog(build_catalog(root), root / "artifacts" / "catalogs" / "workspace.json")
+    threading.Thread(target=_write_catalog, args=(root,), name="workspace-catalog", daemon=True).start()
     app = create_app(root=root)
     url = f"http://{ns.host}:{ns.port}/"
     sys.stdout.write(f"tuner-workbench serving {url}  root={root}\n")

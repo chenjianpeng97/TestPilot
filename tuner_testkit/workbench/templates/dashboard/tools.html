@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "dashboard/_macros.html" import stamp, num, needs_json %}
+{% block title %}工具 · tuner workbench{% endblock %}
+{% block body %}
+{% set c = dash.counts or {} %}
+<h1>工具</h1>
+{{ stamp(dash) }}
+<section class="stats">
+  <div class="stat"><strong>{{ num(c.kit_commands) }}</strong><span>工作台通用命令</span></div>
+  <div class="stat"><strong>{{ num(c.workspace_tools) }}</strong><span>项目自建工具</span></div>
+  <div class="stat"><strong>{{ num(c.workspace_apps_without_tool) }}</strong><span>无 tool.py 的 app</span></div>
+</section>
+{{ needs_json(dash) }}
+{% if section and not section.error %}
+<h2>项目自建工具（<code>apps/</code>）</h2>
+{% if section.workspace %}
+<table>
+  <tr><th>工具</th><th>名称</th><th>分组</th><th>端口</th><th>说明</th></tr>
+  {% for t in section.workspace %}
+  <tr>
+    <td>{% if t.visibility == "workbench" and not t.error %}<a href="/tools/{{ t.id }}"><code>{{ t.id }}</code></a>{% else %}<code>{{ t.id }}</code>{% endif %}</td>
+    <td>{{ t.name }}{% if t.destructive %} <span class="badge st-warn">会写数据</span>{% endif %}</td>
+    <td>{{ t.group }}</td>
+    <td>{{ t.port or "—" }}</td>
+    <td>{% if t.error %}<span class="warn">{{ t.error }}</span>{% else %}{{ t.summary }}{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">暂无</p>{% endif %}
+{% if section.workspace_without_tool %}
+<p class="muted">没有 <code>tool.py</code>（只在命令行用）：{{ section.workspace_without_tool|join("、") }}</p>
+{% endif %}
+<h2>工作台通用命令（kit {{ section.kit_version or "?" }}）</h2>
+<table>
+  <tr><th>命令</th><th>做什么</th><th>工作台可运行</th></tr>
+  {% for t in section.kit_commands %}
+  <tr><td><code>{{ t.command }}</code></td><td>{{ t.summary or "—" }}</td><td>{{ "是" if t.workbench else "—" }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "dashboard/_macros.html" import stamp, needs_json %}
+{% block title %}被测系统配置 · tuner workbench{% endblock %}
+{% block body %}
+<h1>被测系统配置</h1>
+{{ stamp(dash) }}
+{{ needs_json(dash) }}
+{% if section.error %}<p class="warn">{{ section.error }}</p>{% endif %}
+{% if section and section.mode %}
+<p class="muted">只显示地址与数据源的类型、host、端口、库名；密码、令牌、账号不在统计结果里。切换环境去 <a href="/env">环境</a>，改配置让 AI 执行 <code>maintain-config</code>。</p>
+{% if section.mode == "environments" %}
+<p>共 {{ section.environments|length }} 套环境，当前：<strong>{{ section.active or "未选定" }}</strong></p>
+<table class="wrap">
+  <tr><th>环境</th><th>接口地址</th><th>前端地址</th><th>数据源</th><th>其它配置段（条目数）</th></tr>
+  {% for e in section.environments %}
+  <tr class="{{ 'active-row' if e.name == section.active else '' }}">
+    <td class="nowrap"><strong>{{ e.name }}</strong>{% if e.name == section.active %} <span class="badge st-ok">当前</span>{% endif %}</td>
+    <td>{{ e.api_base_url or "—" }}</td>
+    <td>{{ e.ui_base_url or "—" }}</td>
+    <td>
+      {% for db in e.databases %}
+      <div><code>{{ db.alias }}</code> {{ db.type or "" }} {{ db.host or "" }}{% if db.port %}:{{ db.port }}{% endif %}{% if db.name %} / {{ db.name }}{% endif %}</div>
+      {% else %}—{% endfor %}
+    </td>
+    <td><div class="chips">{% for k, n in e.sections.items() %}<span class="chip">{{ k }} {{ n }}</span>{% else %}—{% endfor %}</div></td>
+  </tr>
+  {% endfor %}
+</table>
+{% elif section.mode == "flat" %}
+<p>本机配置没有使用 <code>ENVIRONMENTS</code> 多环境写法（单套配置）。</p>
+{% else %}
+<p class="warn">没有本机配置 <code>config/env_local.py</code>：让 AI 执行 <code>maintain-config</code>。</p>
+{% endif %}
+<h2>通道、端口与知识位置</h2>
+<table>
+  <tr><th>项</th><th>值</th></tr>
+  {% for k, v in section.channels.items() %}<tr><td>通道 <code>{{ k }}</code></td><td>{{ v }}</td></tr>{% endfor %}
+  {% for k, v in section.ports.items() %}<tr><td>端口 <code>{{ k }}</code></td><td>{{ v }}</td></tr>{% else %}<tr><td>端口</td><td class="muted">未绑定</td></tr>{% endfor %}
+  <tr><td>源码位置</td><td>{{ section.knowledge.source_roots }} 处</td></tr>
+  <tr><td>API 文档</td><td>{{ section.knowledge.api_docs }} 份</td></tr>
+</table>
+{% endif %}
+{% endblock %}
